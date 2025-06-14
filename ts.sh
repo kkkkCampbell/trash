@@ -8,12 +8,12 @@ ip_check_site="ipinfo.io"
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
-echo =========
+echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 echo
 
 echo STOPPING UNNECESSARY SERVICES
-echo =============================
+echo ==============================
 printf "${green}youtubeUnblock: ${reset}" && service youtubeUnblock stop
 printf "${green}zapret: ${reset}" && service zapret stop
 printf "${green}ruantiblock: ${reset}" && service ruantiblock stop
@@ -22,7 +22,7 @@ printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null
 echo
 
 echo NETWORK_TEST
-echo ============
+echo =============
 printf "${green}PING DIRECT [ $test_site ]: ${reset}" && ping -q -c 2 $test_site | grep loss
 printf "${green}PING DIRECT [ 8.8.8.8 ]: ${reset}" && ping -q -c 2 $test_ip | grep loss
 printf "${green}PING AWG10 [ $test_site ]: ${reset}" && ping -I awg10 -q -c 2 $test_site | grep loss
