@@ -2,7 +2,7 @@
 
 green='\033[32m'
 reset='\033[0m'
-test_site="https://ya.ru"
+test_site="google.com"
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
