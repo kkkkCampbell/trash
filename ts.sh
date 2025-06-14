@@ -27,8 +27,8 @@ ping -I awg10 -q -c 1 ya.ru
 ping -I awg10 -q -c 1 8.8.8.8
 printf "${green}DIRECT [ $test_site ]: ${reset}" && wget -T 5 -qO- $test_site | head -c 50 && echo
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && http_proxy="http://127.0.0.1:18080" wget -T 5 -qO- $test_site | head -c 50 && echo
-ip=$(wget -qO- http://ipecho.net/plain)
-wget -qO- "http://ipapi.co/$ip/json" | grep -E 'country_name|city'
+ip=$(wget -qO- http://ipecho.net/plain) > /dev/nul
+wget -qO- -T 5 "http://ip-api.com/line/$ip?fields=country"
 PS1="$PS1_BAK"
 echo DONE
 echo
