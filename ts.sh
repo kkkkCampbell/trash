@@ -6,18 +6,27 @@
 serv_stop() {
     status_output=$(service "$1" status 2>&1)
 
-    if [ "$status_output" = "Service \"$1\" not found:" ]; then
-        echo "$1 not installed"
-        return 1
-    elif echo "$status_output" | grep -q "running"; then
-        service "$1" stop >/dev/null 2>&1
-        echo "$1 stopped"
-    elif echo "$status_output" | grep -q "inactive"; then
-        echo "$1 already stopped"
-    else
-        echo "Unknown status for $1: '$status_output'"
-        return 1
-    fi
+    case "$status_output" in
+        "Service \"$1\" not found:")
+            echo "$1 not installed"
+            return 1
+            ;;
+        *running*)
+            if service "$1" stop >/dev/null 2>&1; then
+                echo "$1 stopped"
+            else
+                echo "Failed to stop $1"
+                return 1
+            fi
+            ;;
+        *inactive*)
+            echo "$1 already stopped"
+            ;;
+        *)
+            echo "Unknown status for $1: '$status_output'"
+            return 1
+            ;;
+    esac
 }
 
 
