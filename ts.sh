@@ -8,9 +8,9 @@ echo
 
 echo STOPPING UNNECESSARY SERVICE
 echo ==============================
-service youtubeUnblock stop
-service zapret stop
-service ruantiblock stop
+echo youtubeUnblock && service youtubeUnblock stop
+echo zapret && service zapret stop
+echo ruantiblock && service ruantiblock stop
 [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
 service podkop restart && sleep 10
 echo
