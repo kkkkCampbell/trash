@@ -3,6 +3,7 @@ ho#!/bin/sh
 green='\033[32m'
 reset='\033[0m'
 test_site="google.com"
+test_ip="8.8.8.8"
 ip_check_site="ipinfo.io"
 
 PS1_BAK="$PS1" && PS1="" && clear
@@ -23,9 +24,9 @@ echo
 echo NETWORK_TEST
 echo ============
 printf "${green}PING DIRECT [ $test_site ]: ${reset}" && ping -q -c 2 $test_site | grep loss
-printf "${green}PING DIRECT [ 8.8.8.8 ]: ${reset}" && ping -q -c 2 8.8.8.8 | grep loss
+printf "${green}PING DIRECT [ 8.8.8.8 ]: ${reset}" && ping -q -c 2 $test_ip | grep loss
 printf "${green}PING AWG10 [ $test_site ]: ${reset}" && ping -I awg10 -q -c 2 $test_site | grep loss
-printf "${green}PING AWG10 [ 8.8.8.8 ]: ${reset}" && ping -I awg10 -q -c 2 8.8.8.8 | grep loss
+printf "${green}PING AWG10 [ 8.8.8.8 ]: ${reset}" && ping -I awg10 -q -c 2 $test_ip | grep loss
 echo
 
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
