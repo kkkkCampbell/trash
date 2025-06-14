@@ -1,4 +1,6 @@
 #!/bin/sh
+green=$(tput setaf 2)
+reset=$(tput sgr0)
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
@@ -8,11 +10,11 @@ echo
 
 echo STOPPING UNNECESSARY SERVICE
 echo =============================
-printf 'youtubeUnblock: ' && service youtubeUnblock stop
+printf '${green}youtubeUnblock: ' && service youtubeUnblock stop
 printf 'zapret: '&& service zapret stop
 printf 'ruantiblock: '&& service ruantiblock stop
 printf 'DoH: '&& [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
-printf 'podkop: ' && service podkop restart && sleep 10
+printf 'podkop: ${reset}' && service podkop restart && sleep 10
 echo
 
 echo NETWORK_TEST
