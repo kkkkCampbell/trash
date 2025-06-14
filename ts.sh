@@ -10,13 +10,14 @@ test_ip="8.8.8.8"
 ip_check_site="ipinfo.io"
 
 clear
-# проверяем наличие интерфейса awg10, при его отсутствии прекращаем выполнение скрипта
-ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4." >&2; exit 1; }
 
 echo INSTALLED
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
 echo
+
+# проверяем наличие интерфейса awg10, при его отсутствии прекращаем выполнение скрипта
+ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4." >&2; exit 1; }
 
 echo STOPPING UNNECESSARY SERVICES
 echo ==============================
