@@ -24,7 +24,7 @@ serv_stop() {
             ;;
     esac
 }
-}
+
 
 
 
