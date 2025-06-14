@@ -3,6 +3,7 @@ ch#!/bin/sh
 green='\033[32m'
 reset='\033[0m'
 test_site="google.com"
+ip_check_site="ipinfo.io"
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
@@ -30,7 +31,7 @@ printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c
 echo
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
 echo
-printf "${green}OPERA-PROXY-COUNTRY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
+printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
 PS1="$PS1_BAK"
 echo DONE
 echo
