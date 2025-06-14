@@ -1,6 +1,7 @@
 #!/bin/sh
-green=$(tput setaf 2)
-reset=$(tput sgr0)
+
+green='\033[32m'
+reset='\033[0m'
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
