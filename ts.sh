@@ -9,7 +9,7 @@ echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 echo
 
-echo STOPPING UNNECESSARY SERVICE
+echo STOPPING UNNECESSARY SERVICES
 echo =============================
 printf "${green}youtubeUnblock: ${reset}" && service youtubeUnblock stop
 printf "${green}zapret: ${reset}" && service zapret stop
