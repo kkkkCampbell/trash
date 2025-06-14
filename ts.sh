@@ -10,7 +10,6 @@ echo INSTALLED
 echo =========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 echo
-
 echo STOPPING UNNECESSARY SERVICES
 echo =============================
 printf "${green}youtubeUnblock: ${reset}" && service youtubeUnblock stop
@@ -20,7 +19,7 @@ printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] &&
 printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 10 && service podkop status && echo
 echo
 echo NETWORK_TEST
-echo =============
+echo ============
 printf "${green}PING DIRECT: ${reset}" && ping -q -c 1 $test_site 
 printf "${green}PING DIRECT: ${reset}" && ping -q -c 1 8.8.8.8
 printf "${green}PING AWG10: ${reset}" && ping -I awg10 -q -c 1 $test_site
