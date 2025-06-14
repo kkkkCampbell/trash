@@ -1,12 +1,18 @@
 #!/bin/sh
 
 green='\033[32m'
+yellow='\033[33m'
+red='\033[0;31m'
 reset='\033[0m'
+
 test_site="google.com"
 test_ip="8.8.8.8"
 ip_check_site="ipinfo.io"
 
-PS1_BAK="$PS1" && PS1="" && clear
+clear
+# проверяем наличие интерфейса awg10, при его отсутствии прекращаем выполнение скрипта
+ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4. Завершаю выполнение скрипта." >&2; exit 1; }
+
 echo INSTALLED
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
@@ -14,7 +20,7 @@ echo
 
 echo STOPPING UNNECESSARY SERVICES
 echo ==============================
-printf "${green}youtubeUnblock: ${reset}" && if [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'running')" -gt 0 ]; then service youtubeUnblock stop >/dev/null && [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'inactive')" -gt 0 ] && echo "youtubeUnblock stopped successfully" || echo -e "\033[0;31mFailed to stop youtubeUnblock\033[0m"; else echo "youtubeUnblock already stopped"; fi
+printf "${green}youtubeUnblock: ${reset}" && if [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'running')" -gt 0 ]; then service youtubeUnblock stop >/dev/null && [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'inactive')" -gt 0 ] && echo "youtubeUnblock stopped successfully" || echo -e "${red}Failed to stop youtubeUnblock${reset}"; else echo "youtubeUnblock already stopped"; fi
 
 printf "${green}zapret: ${reset}" && service zapret stop
 printf "${green}ruantiblock: ${reset}" && service ruantiblock stop
@@ -41,6 +47,5 @@ echo
 
 printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $ip_check_site | grep -i -E "country|message"
 #printf "${green}AWG-IFACE-COUNTRY [ $ip_check_site ]:   ${reset}" && curl --interface awg10 -s ipinfo.io | grep  -i -E "country|message"
-PS1="$PS1_BAK"
 echo DONE
 echo
