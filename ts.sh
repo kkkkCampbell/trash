@@ -1,4 +1,4 @@
-ho#!/bin/sh
+#!/bin/sh
 
 green='\033[32m'
 reset='\033[0m'
@@ -14,7 +14,8 @@ echo
 
 echo STOPPING UNNECESSARY SERVICES
 echo ==============================
-printf "${green}youtubeUnblock: ${reset}" && service youtubeUnblock stop
+printf "${green}youtubeUnblock: ${reset}" && if [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'running')" -gt 0 ]; then service youtubeUnblock stop >/dev/null && [ "$(service youtubeUnblock status 2>/dev/null | grep -c 'inactive')" -gt 0 ] && echo "youtubeUnblock stopped successfully" || echo -e "\033[0;31mFailed to stop youtubeUnblock\033[0m"; else echo "youtubeUnblock already stopped"; fi
+
 printf "${green}zapret: ${reset}" && service zapret stop
 printf "${green}ruantiblock: ${reset}" && service ruantiblock stop
 printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
