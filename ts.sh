@@ -21,10 +21,10 @@ echo
 
 echo NETWORK_TEST
 echo =============
-printf "${green}PING DIRECT[ $test_site ]: ${reset}" && ping -q -c 1 ya.ru
-printf "${green}PING DIRECT[ $test_site ]: ${reset}" && ping -q -c 1 8.8.8.8
-printf "${green}PING AWG10[ $test_site ]: ${reset}" && ping -I awg10 -q -c 1 ya.ru
-printf "${green}PING AWG10[ $test_site ]: ${reset}" && ping -I awg10 -q -c 1 8.8.8.8 
+printf "${green}PING DIRECT : ${reset}" && ping -q -c 1 $test_site 
+printf "${green}PING DIRECT : ${reset}" && ping -q -c 1 8.8.8.8
+printf "${green}PING AWG10 : ${reset}" && ping -I awg10 -q -c 1 $test_site
+printf "${green}PING AWG10 : ${reset}" && ping -I awg10 -q -c 1 8.8.8.8 
 echo
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
 echo
