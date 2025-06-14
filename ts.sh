@@ -2,30 +2,28 @@
 
 
 # functions
-serv_stop() {
-    if ! service "$1" status >/dev/null 2>&1; then
-        echo -e " '$1' not found (not installed)"
-        return 0
-    fi
 
-    # Check if service is running
-    if [ "$(service "$1" status 2>/dev/null | grep -c 'running')" -gt 0 ]; then
-        # Try to stop the service
-        if service "$1" stop >/dev/null 2>&1; then
-            # Verify it's now inactive
-            if [ "$(service "$1" status 2>/dev/null | grep -c 'inactive\|stopped')" -gt 0 ]; then
-                echo -e "Success: '$1' stopped"
-            else
-                echo -e "${red}Error: '$1' failed to stop (still running)${reset}"
-                return 1
-            fi
-        else
-            echo -e "${red}Error: Failed to stop '$1' (command failed)${reset}"
+serv_stop() {
+    status_output=$(service "$1" status 2>&1)  # Получаем статус (с захватом stderr)
+
+    case "$status_output" in
+        *"running"*)
+            service "$1" stop >/dev/null 2>&1
+            echo "$1 stopped"
+            ;;
+        *"inactive"*)
+            echo "$1 already stopped"
+            ;;
+        *"not found"*)
+            echo "$1 not installed"
             return 1
-        fi
-    else
-        echo -e "'$1' already stopped"
-    fi
+            ;;
+        *)
+            echo "Unknown status for $1: '$status_output'"
+            return 1
+            ;;
+    esac
+}
 }
 
 
