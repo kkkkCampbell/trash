@@ -5,6 +5,7 @@
 
 serv_stop() {
     status_output=$(service "$1" status 2>&1)
+	printf "${green}${1}: ${reset}"
 
     case "$status_output" in
         "Service \"$1\" not found:")
@@ -52,9 +53,9 @@ ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфе
 
 echo STOPPING UNNECESSARY SERVICES
 echo ==============================
-printf "${green}youtubeUnblock: ${reset}" && serv_stop youtubeUnblock
-printf "${green}zapret: ${reset}" && serv_stop zapret
-printf "${green}ruantiblock: ${reset}" && serv_stop ruantiblock
+serv_stop youtubeUnblock
+serv_stop zapret
+serv_stop ruantiblock
 
 printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
 printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 5 && service podkop status
@@ -81,4 +82,3 @@ printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x 
 #printf "${green}AWG-IFACE-COUNTRY [ $ip_check_site ]:   ${reset}" && curl --interface awg10 -s ipinfo.io | grep  -i -E "country|message"
 echo DONE
 echo
-
