@@ -7,7 +7,7 @@ ip_check_site="ipinfo.io"
 
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
-echo ==========
+echo =========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 echo
 
