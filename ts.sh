@@ -5,7 +5,7 @@
 
 serv_stop() {
     status_output=$(service "$1" status 2>&1)
-	printf "${green}${1}: ${reset}"
+    printf "${green}${1}: ${reset}"
 
     case "$status_output" in
         "Service \"$1\" not found:")
