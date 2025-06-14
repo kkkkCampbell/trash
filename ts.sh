@@ -5,6 +5,7 @@ echo INSTALLED
 echo ===========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 
+
 echo STOPPING UNNECESSARY SERVICE
 echo ==============================
 service youtubeUnblock stop
@@ -12,6 +13,7 @@ service zapret stop
 service ruantiblock stop
 [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
 service podkop restart && sleep 10
+
 
 echo NETWORK_TEST
 echo =============
