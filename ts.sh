@@ -11,7 +11,7 @@ ip_check_site="ipinfo.io"
 
 clear
 # проверяем наличие интерфейса awg10, при его отсутствии прекращаем выполнение скрипта
-ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4. Завершаю выполнение скрипта." >&2; exit 1; }
+ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4." >&2; exit 1; }
 
 echo INSTALLED
 echo ==========
@@ -36,13 +36,13 @@ printf "${green}PING AWG10  [ $test_site ]: ${reset}" && ping -I awg10 -q -c 2 $
 printf "${green}PING AWG10  [ 8.8.8.8 ]:    ${reset}" && ping -I awg10 -q -c 2 $test_ip | grep loss
 echo
 
-printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -s $test_site | head -c 50
+printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -s $test_site | head -c 12
 echo
 
-printf "${green}AWG10  [ $test_site ]: ${reset}     " && curl --interface awg10 -s $test_site | head -c 50
+printf "${green}AWG10  [ $test_site ]: ${reset}     " && curl --interface awg10 -s $test_site | head -c 12
 echo
 
-printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
+printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 12
 echo
 
 printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $ip_check_site | grep -i -E "country|message"
