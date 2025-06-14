@@ -24,9 +24,9 @@ echo
 echo NETWORK_TEST
 echo =============
 printf "${green}PING DIRECT [ $test_site ]: ${reset}" && ping -q -c 2 $test_site | grep loss
-printf "${green}PING DIRECT [ 8.8.8.8 ]: ${reset}" && ping -q -c 2 $test_ip | grep loss
+printf "${green}PING DIRECT [ 8.8.8.8 ]:    ${reset}" && ping -q -c 2 $test_ip | grep loss
 printf "${green}PING AWG10  [ $test_site ]: ${reset}" && ping -I awg10 -q -c 2 $test_site | grep loss
-printf "${green}PING AWG10  [ 8.8.8.8 ]: ${reset}" && ping -I awg10 -q -c 2 $test_ip | grep loss
+printf "${green}PING AWG10  [ 8.8.8.8 ]:    ${reset}" && ping -I awg10 -q -c 2 $test_ip | grep loss
 echo
 
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
