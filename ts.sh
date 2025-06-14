@@ -26,8 +26,8 @@ ping -q -c 1 8.8.8.8
 ping -I awg10 -q -c 1 ya.ru
 ping -I awg10 -q -c 1 8.8.8.8
 printf "${green}DIRECT [ $test_site ]: ${reset}" && wget -T 5 -qO- $test_site | head -c 50 && echo
-printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -x http://127.0.0.1:18080 $test_site | head -c 50 && echo
-curl -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
+printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50 && echo
+curl -s -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
 PS1="$PS1_BAK"
 echo DONE
 echo
