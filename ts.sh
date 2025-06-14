@@ -9,7 +9,7 @@ ip_check_site="ipinfo.io"
 PS1_BAK="$PS1" && PS1="" && clear
 echo INSTALLED
 echo ==========
-opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
+opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
 echo
 
 echo STOPPING UNNECESSARY SERVICES
