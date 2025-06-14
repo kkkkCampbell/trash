@@ -21,12 +21,13 @@ echo
 
 echo NETWORK_TEST
 echo =============
-printf "${green}PING DIRECT[ $test_site ]: ${reset}" ping -q -c 1 ya.ru
-printf "${green}PING DIRECT[ $test_site ]: ${reset}" ping -q -c 1 8.8.8.8
-printf "${green}PING AWG10[ $test_site ]: ${reset}" ping -I awg10 -q -c 1 ya.ru
-printf "${green}PING AWG10[ $test_site ]: ${reset}" ping -I awg10 -q -c 1 8.8.8.8 
+printf "${green}PING DIRECT[ $test_site ]: ${reset}" && ping -q -c 1 ya.ru
+printf "${green}PING DIRECT[ $test_site ]: ${reset}" && ping -q -c 1 8.8.8.8
+printf "${green}PING AWG10[ $test_site ]: ${reset}" && ping -I awg10 -q -c 1 ya.ru
+printf "${green}PING AWG10[ $test_site ]: ${reset}" && ping -I awg10 -q -c 1 8.8.8.8 
 echo
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
+echo
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
 echo
 printf "${green}OPERA-PROXY-COUNTRY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
