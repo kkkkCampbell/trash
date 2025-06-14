@@ -24,7 +24,8 @@ echo =============
 ping -q -c 1 ya.ru
 ping -q -c 1 8.8.8.8
 ping -I awg10 -q -c 1 ya.ru
-ping -I awg10 -q -c 1 8.8.8.8
+ping -I awg10 -q -c 1 8.8.8.8 
+echo
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
 printf "${green}OPERA-PROXY-COUNTRY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 https://ipinfo.io/ | grep country
