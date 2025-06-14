@@ -8,22 +8,22 @@ serv_stop() {
 
     case "$status_output" in
         "Service \"$1\" not found:")
-            echo "$1 not installed"
+            echo "not installed"
             return 1
             ;;
         *running*)
             if service "$1" stop >/dev/null 2>&1; then
-                echo "$1 stopped"
+                echo "stopped"
             else
-                echo "Failed to stop $1"
+                echo "Failed to stop"
                 return 1
             fi
             ;;
         *inactive*)
-            echo "$1 already stopped"
+            echo "already stopped"
             ;;
         *)
-            echo "Unknown status for $1: '$status_output'"
+            echo "Unknown status: '$status_output'"
             return 1
             ;;
     esac
