@@ -1,4 +1,4 @@
-#!/bin/sh
+ch#!/bin/sh
 
 green='\033[32m'
 reset='\033[0m'
@@ -21,10 +21,10 @@ echo
 
 echo NETWORK_TEST
 echo =============
-ping -q -c 1 ya.ru
-ping -q -c 1 8.8.8.8
-ping -I awg10 -q -c 1 ya.ru
-ping -I awg10 -q -c 1 8.8.8.8 
+printf "${green}DIRECT[ $test_site ]: ${reset}" ping -q -c 1 ya.ru
+printf "${green}DIRECT[ $test_site ]: ${reset}" ping -q -c 1 8.8.8.8
+printf "${green}AWG10[ $test_site ]: ${reset}" ping -I awg10 -q -c 1 ya.ru
+printf "${green}AWG10[ $test_site ]: ${reset}" ping -I awg10 -q -c 1 8.8.8.8 
 echo
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
