@@ -1,5 +1,25 @@
 #!/bin/sh
 
+
+# functions
+
+serv_stop() {
+	if [ "$(service "$1" status 2>/dev/null | grep -c 'running')" -gt 0 ]; then
+		if service "$1" stop >/dev/null && \
+		   [ "$(service "$1" status 2>/dev/null | grep -c 'inactive')" -gt 0 ]; then
+			echo "$1 stopped successfully"
+		else
+			echo -e "${red}Failed to stop $1${reset}"
+		fi
+	else
+		echo "$1 already stopped"
+	fi
+}
+
+
+
+
+
 green='\033[32m'
 yellow='\033[33m'
 red='\033[0;31m'
@@ -50,19 +70,4 @@ printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x 
 #printf "${green}AWG-IFACE-COUNTRY [ $ip_check_site ]:   ${reset}" && curl --interface awg10 -s ipinfo.io | grep  -i -E "country|message"
 echo DONE
 echo
-
-# functions
-
-serv_stop() {
-	if [ "$(service "$1" status 2>/dev/null | grep -c 'running')" -gt 0 ]; then
-		if service "$1" stop >/dev/null && \
-		   [ "$(service "$1" status 2>/dev/null | grep -c 'inactive')" -gt 0 ]; then
-			echo "$1 stopped successfully"
-		else
-			echo -e "${red}Failed to stop $1${reset}"
-		fi
-	else
-		echo "$1 already stopped"
-	fi
-}
 
