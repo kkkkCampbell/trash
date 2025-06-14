@@ -32,7 +32,7 @@ echo
 printf "${green}DIRECT [ $test_site ]: ${reset}" && curl -s $test_site | head -c 50
 echo
 
-printf "${green}AWG10 [ $test_site ]: ${reset}" && curl --interface awg10 -s $test_site | head -c 50
+printf "${green}AWG10  [ $test_site ]: ${reset}" && curl --interface awg10 -s $test_site | head -c 50
 echo
 
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 50
