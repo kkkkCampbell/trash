@@ -24,7 +24,7 @@ ping -q -c 1 ya.ru
 ping -q -c 1 8.8.8.8
 ping -I awg10 -q -c 1 ya.ru
 ping -I awg10 -q -c 1 8.8.8.8
-wget -T 5 -qO- https://ya.ru | head -c 50 
+wget -T 5 -qO- https://ya.ru | head -c 50 && echo
 PS1="$PS1_BAK"
 echo DONE
 echo
