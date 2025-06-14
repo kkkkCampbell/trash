@@ -1,8 +1,6 @@
 #!/bin/sh
 
-PS1_BAK="$PS1"
-PS1=""
-clear
+PS1_BAK="$PS1" && PS1="" && clear
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock"
 service youtubeUnblock stop
 service zapret stop
