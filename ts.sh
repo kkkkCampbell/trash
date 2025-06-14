@@ -2,21 +2,34 @@
 
 
 # functions
-
 serv_stop() {
-	if [ "$(service "$1" status 2>/dev/null | grep -c 'running')" -gt 0 ]; then
-		if service "$1" stop >/dev/null && \
-		   [ "$(service "$1" status 2>/dev/null | grep -c 'inactive')" -gt 0 ]; then
-			echo "$1 stopped successfully"
-		else
-			echo -e "${red}Failed to stop $1${reset}"
-		fi
-	else
-		echo "$1 already stopped"
-	fi
+    if ! service "$1" status >/dev/null 2>&1; then
+        echo -e " '$1' not found (not installed)"
+        return 0
+    fi
+
+    # Check if service is running
+    if [ "$(service "$1" status 2>/dev/null | grep -c 'running')" -gt 0 ]; then
+        # Try to stop the service
+        if service "$1" stop >/dev/null 2>&1; then
+            # Verify it's now inactive
+            if [ "$(service "$1" status 2>/dev/null | grep -c 'inactive\|stopped')" -gt 0 ]; then
+                echo -e "Success: '$1' stopped"
+            else
+                echo -e "${red}Error: '$1' failed to stop (still running)${reset}"
+                return 1
+            fi
+        else
+            echo -e "${red}Error: Failed to stop '$1' (command failed)${reset}"
+            return 1
+        fi
+    else
+        echo -e "'$1' already stopped"
+    fi
 }
 
-echo here
+
+
 
 
 
