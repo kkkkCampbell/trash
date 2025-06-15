@@ -55,7 +55,7 @@ if [ -z "$interfaces" ]; then
     exit 1
 fi
 
-echo "VPN-интерфейсы (по протоколу):"
+echo "Выберите номер нужного вам VPN-интерфейса, затем нажмите Enter:"
 count=1
 echo "$interfaces" | while read -r ifname; do
     echo "$count. $ifname"
