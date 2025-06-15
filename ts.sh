@@ -40,7 +40,6 @@ reset='\033[0m'
 test_site="google.com"
 test_ip="8.8.8.8"
 ip_check_site="ipinfo.io"
-
 clear
 
 # Ищем интерфейсы, где ПРОТОКОЛ (proto) содержит 'amnezia' или 'vpn'
@@ -68,7 +67,7 @@ read -p "Номер интерфейса: " num
 vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
 
 [ -n "$vpn_iface" ] && echo "Выбрано: $vpn_iface" || { echo "Ошибка"; exit 1; }
-
+clear
 
 
 
