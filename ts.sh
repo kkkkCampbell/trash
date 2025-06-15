@@ -91,6 +91,8 @@ serv_stop ruantiblock
 
 printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
 printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 5 && service podkop status
+printf "${green}sing-box [status]: ${reset}" && service sing-box status
+printf "${green}opera-proxy [status]: ${reset}" && service opera-proxy status
 echo
 
 echo NETWORK_TEST
