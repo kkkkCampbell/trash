@@ -1,5 +1,22 @@
 #!/bin/sh
 
+green='\033[32m'
+yellow='\033[33m'
+red='\033[0;31m'
+reset='\033[0m'
+
+test_site="google.com"
+test_ip="8.8.8.8"
+vpn_iface="awg10"
+
+geocheck_site="ipinfo.io"
+geocheck_proxy="curl -u aa04d67c737a74: ${geocheck_site} -m 10 -s -x "
+geocheck_vpn="curl -u aa04d67c737a74: ${geocheck_site} -m 10 -s --interface "
+
+opera_proxy="http://127.0.0.1:18080"
+vless_proxy="http://127.0.0.1:1602"
+
+
 
 # functions
 
@@ -30,56 +47,41 @@ serv_stop() {
     esac
 }
 
-
-
-green='\033[32m'
-yellow='\033[33m'
-red='\033[0;31m'
-reset='\033[0m'
-
-test_site="google.com"
-test_ip="8.8.8.8"
-ip_check_site="ipinfo.io"
-
 clear
 
-# Ищем интерфейсы, где ПРОТОКОЛ (proto) содержит 'amnezia' или 'vpn'
-interfaces=$(ubus call network.interface dump | jsonfilter -e '@.interface[*]' | while read -r iface; do
-    proto=$(echo "$iface" | jsonfilter -e '@.proto')
-    echo "$proto" | grep -qi -E 'amnezia|vpn' && \
-    echo "$iface" | jsonfilter -e '@.interface'
-done)
+if ! ip a show dev awg10 >/dev/null 2>&1; then
+	# Ищем интерфейсы, где ПРОТОКОЛ (proto) содержит 'amnezia' или 'vpn'
+	interfaces=$(ubus call network.interface dump | jsonfilter -e '@.interface[*]' | while read -r iface; do
+		proto=$(echo "$iface" | jsonfilter -e '@.proto')
+		echo "$proto" | grep -qi -E 'amnezia|vpn' && \
+		echo "$iface" | jsonfilter -e '@.interface'
+	done)
 
-# Проверяем и выводим список
-if [ -z "$interfaces" ]; then
-    echo "Интерфейсы с VPN-протоколами не найдены"
-    exit 1
+	# Проверяем и выводим список
+	if [ -z "$interfaces" ]; then
+		echo "Интерфейсы с VPN-протоколами не найдены"
+		exit 1
+	fi
+
+	echo "VPN-интерфейсы (по протоколу):"
+	count=1
+	echo "$interfaces" | while read -r ifname; do
+		echo "$count. $ifname"
+		count=$((count+1))
+	done
+
+	# Выбор и запись в переменную
+	read -p "Номер интерфейса: " num
+	vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
+
+	[ -n "$vpn_iface" ] && echo "Выбрано: $vpn_iface" || { echo "Ошибка"; exit 1; }
 fi
-
-echo "VPN-интерфейсы (по протоколу):"
-count=1
-echo "$interfaces" | while read -r ifname; do
-    echo "$count. $ifname"
-    count=$((count+1))
-done
-
-# Выбор и запись в переменную
-read -p "Номер интерфейса: " num
-vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
-
-[ -n "$vpn_iface" ] && echo "Выбрано: $vpn_iface" || { echo "Ошибка"; exit 1; }
-
-
 
 
 echo INSTALLED
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
 echo
-
-# проверяем наличие интерфейса awg10, при его отсутствии прекращаем выполнение скрипта
-#ip a show dev awg10 >/dev/null 2>&1 || { echo -e "${yellow}Error: Интерфейс awg10 не обнаружен.${reset} Роутер настроен не скриптом №4." >&2; #exit 1; }
-
 
 echo STOPPING UNNECESSARY SERVICES
 echo ==============================
@@ -99,16 +101,18 @@ printf "${green}PING ${vpn_iface}  [ $test_site ]: ${reset}" && ping -I $vpn_ifa
 printf "${green}PING ${vpn_iface}  [ 8.8.8.8 ]:    ${reset}" && ping -I $vpn_iface -q -c 2 $test_ip | grep loss
 echo
 
-printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -s $test_site | head -c 12
+printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -m 10 -s $test_site | head -c 12 && echo
+printf "${green}VPN (${vpn_iface}) [ $test_site ]: ${reset}" && curl -m 10 -s --interface ${vpn_iface} $test_site | head -c 12  && echo
+printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -m 10 -s -x ${opera_proxy} $test_site | head -c 12 && echo
+#printf "${green}VLESS [ $test_site ]:       ${reset}" && curl -m 10 -s -x ${vless_proxy} $test_site | head -c 12 && echo
 echo
 
-printf "${green}AWG10  [ $test_site ]: ${reset}     " && curl --interface ${vpn_iface} -s $test_site | head -c 12
-echo
+printf "${green}OPERA-PROXY-COUNTRY [ $geocheck_site ]: ${reset}" && ${geocheck_proxy}${opera_proxy} | grep -i -E "country|message"
+printf "${green}VPN-COUNTRY (${vpn_iface}) [ $geocheck_site ]: ${reset}" && ${geocheck_vpn}${vpn_iface} | grep -i -E "country|message"
+#printf "${green}VLESS-COUNTRY [ $geocheck_site ]: ${reset}" && ${geocheck_proxy} ${vless_proxy} | grep -i -E "country|message"
 
-printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 12
-echo
 
-printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $ip_check_site | grep -i -E "country|message"
+
 #printf "${green}AWG-IFACE-COUNTRY [ $ip_check_site ]:   ${reset}" && curl --interface ${vpn_iface} -s ipinfo.io | grep  -i -E "country|message"
 echo DONE
 echo
