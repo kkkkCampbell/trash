@@ -103,7 +103,7 @@ printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -s $test_site | he
 echo
 printf "${green}AWG10  [ $test_site ]: ${reset}     " && curl --interface ${vpn_iface} -s $test_site | head -c 12
 echo
-printf "${green}VLESS [ $test_site ]: ${reset}" && curl -s 127.0.0.1:1602 $test_site | head -c 12
+printf "${green}VLESS [ $test_site ]:      ${reset}" && curl -s 127.0.0.1:1602 $test_site | head -c 12
 echo
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s -x http://127.0.0.1:18080 $test_site | head -c 12
 echo
