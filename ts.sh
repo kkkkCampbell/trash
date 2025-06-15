@@ -39,8 +39,10 @@ reset='\033[0m'
 
 test_site="google.com"
 test_ip="8.8.8.8"
-ip_check_site="ipinfo.io"
+ip_geocheck="curl -u aa04d67c737a74: ipinfo.io --max-time 10 -s -x "     # "ipinfo.io"
 vpn_iface="awg10"
+opera_proxy="http://127.0.0.1:18080"
+vless="http://127.0.0.1:1602"
 clear
 
 
@@ -111,7 +113,10 @@ printf "${green}VLESS  [ $test_site ]:      ${reset}" && curl -s --max-time 10 1
 echo
 printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -s --max-time 10 -x http://127.0.0.1:18080 $test_site | head -c 12
 echo
-printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && curl -s --max-time 10 -x http://127.0.0.1:18080 $ip_check_site | grep -i -E "country|message"
+printf "${green}OPERA-PROXY-COUNTRY [ $ip_check_site ]: ${reset}" && $ip_geocheck $opera_proxy | grep -i -E "country|message"
+printf "${green}VLESS-COUNTRY [ $ip_check_site ]: ${reset}" && $ip_geocheck $vless | grep -i -E "country|message"
+printf "${green}AWG-COUNTRY [ $ip_check_site ]: ${reset}" && $ip_geocheck -I $vpn_iface  | grep -i -E "country|message"
+
 #printf "${green}AWG-IFACE-COUNTRY [ $ip_check_site ]:   ${reset}" && curl --interface ${vpn_iface} -s ipinfo.io | grep  -i -E "country|message"
 echo DONE
 echo
