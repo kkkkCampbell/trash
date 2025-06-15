@@ -39,10 +39,11 @@ reset='\033[0m'
 
 test_site="google.com"
 test_ip="8.8.8.8"
-ip_geocheck="curl -u aa04d67c737a74: ipinfo.io --max-time 10 -s "     # "ipinfo.io"
+ip_geocheck="curl -u aa04d67c737a74: ipinfo.io --max-time 10 -s "     
+ip_check_site="ipinfo.io"
 vpn_iface="awg10"
-opera_proxy="http://127.0.0.1:18080"
-vless_proxy="http://127.0.0.1:1602"
+opera_proxy="127.0.0.1:18080"
+vless_proxy="127.0.0.1:1602"
 clear
 
 
