@@ -40,6 +40,7 @@ reset='\033[0m'
 test_site="google.com"
 test_ip="8.8.8.8"
 ip_check_site="ipinfo.io"
+vpn_iface="awg10"
 clear
 
 
