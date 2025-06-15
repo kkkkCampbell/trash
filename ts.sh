@@ -43,31 +43,18 @@ ip_check_site="ipinfo.io"
 
 clear
 
-# Получаем интерфейсы, содержащие vpn или amnezia (без учета регистра)
-interfaces=($(ip -o link show | awk -F': ' '{print $2}' | grep -i -E 'vpn|amnezia' | grep -v lo))
+# Получаем JSON всех интерфейсов
+interfaces_json=$(ubus call network.interface dump)
 
-if [ ${#interfaces[@]} -eq 0 ]; then
-    echo "Не найдено интерфейсов с именами, содержащими 'vpn' или 'amnezia'"
-    exit 1
-fi
-
-echo "Доступные VPN-интерфейсы:"
-for i in "${!interfaces[@]}"; do
-    echo "$((i+1)). ${interfaces[i]}"
+# Извлекаем имена интерфейсов, где proto содержит "vpn"
+echo "Список интерфейсов с VPN-протоколами:"
+echo "$interfaces_json" | jsonfilter -e '@.interface[*]' | while read -r iface; do
+    proto=$(echo "$iface" | jsonfilter -e '@.proto')
+    if echo "$proto" | grep -qi 'vpn|amnezia'; then
+        ifname=$(echo "$iface" | jsonfilter -e '@.interface')
+        echo "- $ifname (Протокол: $proto)"
+    fi
 done
-
-# Запрашиваем выбор и записываем в переменную
-read -p "Введите номер интерфейса: " num
-if [[ $num -ge 1 && $num -le ${#interfaces[@]} ]]; then
-    vpn_interface="${interfaces[$((num-1))]}"
-    echo "Выбран интерфейс: $vpn_interface"
-    
-    # Здесь можно использовать переменную, например:
-    # ip link set $vpn_interface up
-else
-    echo "Неверный номер интерфейса!"
-    exit 1
-fi
 
 
 
