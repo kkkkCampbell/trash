@@ -43,6 +43,35 @@ ip_check_site="ipinfo.io"
 
 clear
 
+# Получаем интерфейсы, содержащие vpn или amnezia (без учета регистра)
+interfaces=($(ip -o link show | awk -F': ' '{print $2}' | grep -i -E 'vpn|amnezia' | grep -v lo))
+
+if [ ${#interfaces[@]} -eq 0 ]; then
+    echo "Не найдено интерфейсов с именами, содержащими 'vpn' или 'amnezia'"
+    exit 1
+fi
+
+echo "Доступные VPN-интерфейсы:"
+for i in "${!interfaces[@]}"; do
+    echo "$((i+1)). ${interfaces[i]}"
+done
+
+# Запрашиваем выбор и записываем в переменную
+read -p "Введите номер интерфейса: " num
+if [[ $num -ge 1 && $num -le ${#interfaces[@]} ]]; then
+    vpn_interface="${interfaces[$((num-1))]}"
+    echo "Выбран интерфейс: $vpn_interface"
+    
+    # Здесь можно использовать переменную, например:
+    # ip link set $vpn_interface up
+else
+    echo "Неверный номер интерфейса!"
+    exit 1
+fi
+
+
+
+
 echo INSTALLED
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
