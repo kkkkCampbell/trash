@@ -96,9 +96,9 @@ echo
 echo NETWORK_TEST
 echo =============
 printf "${green}PING DIRECT [ $test_site ]: ${reset}" && ping -q -c 2 $test_site | grep loss
-printf "${green}PING DIRECT [ 8.8.8.8 ]:    ${reset}" && ping -q -c 2 $test_ip | grep loss
-printf "${green}PING ${vpn_iface}  [ $test_site ]: ${reset}" && ping -I $vpn_iface -q -c 2 $test_site | grep loss
-printf "${green}PING ${vpn_iface}  [ 8.8.8.8 ]:    ${reset}" && ping -I $vpn_iface -q -c 2 $test_ip | grep loss
+printf "${green}PING DIRECT [ $test_ip ]:    ${reset}" && ping -q -c 2 $test_ip | grep loss
+printf "${green}PING (${vpn_iface})[ $test_site ]: ${reset}" && ping -I $vpn_iface -q -c 2 $test_site | grep loss
+printf "${green}PING (${vpn_iface})[ $test_ip ]:    ${reset}" && ping -I $vpn_iface -q -c 2 $test_ip | grep loss
 echo
 
 printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -m 10 -s $test_site | head -c 12 && echo
