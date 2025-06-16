@@ -1,4 +1,5 @@
 #!/bin/sh
+clear
 
 ARCHIVE_USER="archive"
 PASSWORD="$ARCHIVE_USER"
