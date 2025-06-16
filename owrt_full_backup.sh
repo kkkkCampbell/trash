@@ -1,4 +1,13 @@
 #!/bin/sh
+# Очистка и создание SMB-шары
+ksmbd.addshare -d $SHARE_NAME 2>/dev/null
+
+ksmbd.addshare -a $SHARE_NAME  -o 'path='$ARCHIVE_DIR -o 'browseable=yes' -o 'writeable=yes' -o 'read only = no' -o 'guest ok = yes' -o 'directory mask = 0777' -o 'create mask = 0666'
+
+chmod 0777 /etc/ksmbd/ksmbd.conf
+/etc/init.d/ksmbd restart
+sleep 3
+
 clear
 
 ARCHIVE_USER="archive"
@@ -22,26 +31,17 @@ echo "📁 Создаю директорию $ARCHIVE_DIR..."
 mkdir -p "$ARCHIVE_DIR"
 chmod 0777 "$ARCHIVE_DIR"
 
-echo ${ARCHIVE_FILE}
-
-grep -qxF '/etc' /etc/sysupgrade.conf || echo '/etc' >> /etc/sysupgrade.conf
-sysupgrade -b "${ARCHIVE_DIR}backup-RouteRich-$(date +'%Y-%m-%d').tar.gz"
+# echo ${ARCHIVE_FILE}
 
 echo "🗃️ Создание архива /overlay в $ARCHIVE_FILE..."
 tar -cvhpf "$ARCHIVE_FILE" /overlay >/dev/null 2>&1
 
-
 # Создание пользователя (повторный запуск скрипта не вызовет ошибку)
 #ksmbd.adduser -a "$ARCHIVE_USER" -p "$PASSWORD" 2>/dev/null
 
-# Очистка и создание SMB-шары
-ksmbd.addshare -d $SHARE_NAME 2>/dev/null
-
-ksmbd.addshare -a $SHARE_NAME  -o 'path='$ARCHIVE_DIR -o 'browseable=yes' -o 'writeable=yes' -o 'read only = no' -o 'guest ok = yes' -o 'directory mask = 0777' -o 'create mask = 0666'
-
-chmod 0777 /etc/ksmbd/ksmbd.conf
-/etc/init.d/ksmbd restart
-sleep 3
+# Создаём "классический" архив системы с добавлением каталога /etc (полностью)
+grep -qxF '/etc' /etc/sysupgrade.conf || echo '/etc' >> /etc/sysupgrade.conf
+sysupgrade -b "${ARCHIVE_DIR}backup-RouteRich-$(date +'%Y-%m-%d').tar.gz"
 
 # Получение IP и hostname
 IP=$(ip -4 addr show br-lan | awk '/inet / {print $2}' | cut -d/ -f1)
