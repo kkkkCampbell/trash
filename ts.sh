@@ -49,6 +49,8 @@ serv_stop() {
     esac
 }
 
+# end functions
+
 clear
 
 if ! ip a show dev awg10 >/dev/null 2>&1; then
@@ -59,7 +61,7 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 		echo "$iface" | jsonfilter -e '@.interface'
 	done)
 
-	# Проверяем и выводим список
+	# Проверяем и выводим список интерфейсов
 	if [ -z "$interfaces" ]; then
 		echo "Интерфейсы с VPN-протоколами не найдены"
 		exit 1
@@ -92,8 +94,9 @@ serv_stop youtubeUnblock
 serv_stop zapret
 serv_stop ruantiblock
 
-printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
-printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 5 && service podkop status
+#printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && \
+#{ service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
+#printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 5 && service podkop status
 printf "${green}sing-box [status]: ${reset}" && service sing-box status
 printf "${green}opera-proxy [status]: ${reset}" && service opera-proxy status
 echo
@@ -101,13 +104,13 @@ echo
 echo NETWORK_TEST
 echo =============
 printf "${green}PING DIRECT [ ${test_site} ]: ${reset}"  && ping -q -c 4 $test_site | grep loss
-printf "${green}PING DIRECT [ ${test_ip} ]:    ${reset}" && ping -q -c 4 $test_ip | grep loss
-printf "${green}PING VPN [ ${test_site} ]:    ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
-printf "${green}PING VPN [ ${test_ip} ]:       ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
-printf "${green}DIRECT [ ${test_site} ]: ${reset}     "  && curl -m 10 -s $test_site | head -c 12 && echo
-printf "${green}VPN [ ${test_site} ]:         ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
+printf "${green}PING DIRECT    [ ${test_ip} ]: ${reset}" && ping -q -c 4 $test_ip | grep loss
+printf "${green}PING VPN    [ ${test_site} ]: ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
+printf "${green}PING VPN       [ ${test_ip} ]: ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
+printf "${green}DIRECT      [ ${test_site} ]: ${reset}"  && curl -m 10 -s $test_site | head -c 12 && echo
+printf "${green}VPN         [ ${test_site} ]: ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
 printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
-printf "${green}VLESS [ ${test_site} ]:       ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
+printf "${green}VLESS       [ ${test_site} ]: ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
 echo
 
 echo YOUTUBE
@@ -126,7 +129,8 @@ vless_ip=$(sing-box tools fetch ifconfig.me -D /etc/sing-box 2>/dev/null)
 printf "${green}OPERA-PROXY-COUNTRY: ${reset}%s\n" "$(${geocheck_proxy}${opera_proxy} | grep -i -E 'country|message')"
 printf "${green}VPN-COUNTRY:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
 printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"; echo
-printf "${green}VPN-INTERFACE-NAME: ${reset}   "; echo "\"${vpn_iface}\""
+printf "${green}VPN-INTERFACE-NAME: ${reset}   "
+echo "\"${vpn_iface}\""
 
 echo DONE
 echo
