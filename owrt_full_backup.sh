@@ -2,8 +2,8 @@
 
 ARCHIVE_USER="archive"
 PASSWORD="$ARCHIVE_USER"
-ARCHIVE_DIR="/tmp/archive"
-ARCHIVE_FILE="$ARCHIVE_DIR/overlay.tar"
+ARCHIVE_DIR="/tmp/archive/"
+ARCHIVE_FILE=$ARCHIVE_DIR"full_RouteRich_backup_$(date +'%Y-%m-%d_%H-%M').tar"
 SHARE_NAME="archive"
 
 # Цвета (для ash через printf)
@@ -21,8 +21,14 @@ echo "📁 Создаю директорию $ARCHIVE_DIR..."
 mkdir -p "$ARCHIVE_DIR"
 chmod 0777 "$ARCHIVE_DIR"
 
+echo ${ARCHIVE_FILE}
+
+grep -qxF '/etc' /etc/sysupgrade.conf || echo '/etc' >> /etc/sysupgrade.conf
+sysupgrade -b "${ARCHIVE_DIR}backup-RouteRich-$(date +'%Y-%m-%d').tar.gz"
+
 echo "🗃️ Создание архива /overlay в $ARCHIVE_FILE..."
-tar -cvhpf "$ARCHIVE_FILE" /overlay
+tar -cvhpf "$ARCHIVE_FILE" /overlay >/dev/null 2>&1
+
 
 # Создание пользователя (повторный запуск скрипта не вызовет ошибку)
 #ksmbd.adduser -a "$ARCHIVE_USER" -p "$PASSWORD" 2>/dev/null
@@ -41,7 +47,8 @@ IP=$(ip -4 addr show br-lan | awk '/inet / {print $2}' | cut -d/ -f1)
 HOST=$(uci get system.@system[0].hostname)
 
 # Вывод итогов
-printf "\n✅ ${YELLOW}Готово! Вставьте одну из ссылок в алресную строку проводника Windows:"; echo; echo
+printf "\n✅ ${YELLOW}Готово! Архив доступен по адресам"; echo; echo
 printf "${YELLOW}\\\\\\\\%s\\\\%s${NC}\n" "$IP" "$SHARE_NAME"
 printf "${YELLOW}\\\\\\\\%s.lan\\\\%s${NC}\n" "$HOST" "$SHARE_NAME"
-echo; echo;
+echo
+echo
