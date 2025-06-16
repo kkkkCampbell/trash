@@ -16,7 +16,8 @@ geocheck_vless="curl -m 10 -s -u aa04d67c737a74: ${geocheck_site}"
 
 opera_proxy="http://127.0.0.1:18080"
 vless_proxy="sing-box tools fetch ${geocheck_site}?token=aa04d67c737a74"
-
+vless_proxy1="sing-box tools fetch "
+user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
 
 
 # functions
@@ -75,7 +76,7 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 	read -p "Номер интерфейса: " num
 	vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
 
-	[ -n "$vpn_iface" ] && echo "Выбрано: $vpn_iface" || { echo "Ошибка"; exit 1; }
+	[ -n "${vpn_iface}" ] && echo "Выбрано: ${vpn_iface}" || { echo "Ошибка"; exit 1; }
 fi
 
 clear
@@ -99,22 +100,33 @@ echo
 
 echo NETWORK_TEST
 echo =============
-printf "${green}PING DIRECT [ $test_site ]: ${reset}" && ping -q -c 2 $test_site | grep loss
-printf "${green}PING DIRECT [ $test_ip ]:    ${reset}" && ping -q -c 2 $test_ip | grep loss
-printf "${green}PING VPN [ $test_site ]:    ${reset}" && ping -I $vpn_iface -q -c 2 $test_site | grep loss
-printf "${green}PING VPN [ $test_ip ]:       ${reset}" && ping -I $vpn_iface -q -c 2 $test_ip | grep loss
+printf "${green}PING DIRECT [ ${test_site} ]: ${reset}"  && ping -q -c 4 $test_site | grep loss
+printf "${green}PING DIRECT [ ${test_ip} ]:    ${reset}" && ping -q -c 4 $test_ip | grep loss
+printf "${green}PING VPN [ ${test_site} ]:    ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
+printf "${green}PING VPN [ ${test_ip} ]:       ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
+printf "${green}DIRECT [ ${test_site} ]: ${reset}     "  && curl -m 10 -s $test_site | head -c 12 && echo
+printf "${green}VPN [ ${test_site} ]:         ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
+printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
+printf "${green}VLESS [ ${test_site} ]:       ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
 echo
 
-printf "${green}DIRECT [ $test_site ]: ${reset}     " && curl -m 10 -s $test_site | head -c 12 && echo
-printf "${green}VPN [ $test_site ]:         ${reset}" && curl -m 10 -s --interface ${vpn_iface} $test_site | head -c 12  && echo
-printf "${green}OPERA-PROXY [ $test_site ]: ${reset}" && curl -m 10 -s -x ${opera_proxy} $test_site | head -c 12 && echo
-printf "${green}VLESS [ $test_site ]:       ${reset}" && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
+echo YOUTUBE
+echo ========
+test=$(curl -4 -s --user-agent "${user_agent}" -x ${opera_proxy} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
+printf "${green}OPERA-PROXY-COUNTRY: ${reset}" && echo $test
+test=$(curl -4 -s --user-agent "${user_agent}" --interface ${vpn_iface} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
+printf "${green}VPN-COUNTRY: ${reset}" && echo $test
+test=$(curl -4 -s --user-agent "${user_agent}" ${vless_proxy1} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
+printf "${green}VLESS-PROXY-COUNTRY: ${reset}" && echo $test
 echo
 
+echo IPINFO.IO
+echo ==========
 vless_ip=$(sing-box tools fetch ifconfig.me -D /etc/sing-box 2>/dev/null)
-printf "${green}OPERA-PROXY-COUNTRY [ $geocheck_site ]: ${reset}%s\n" "$(${geocheck_proxy}${opera_proxy} | grep -i -E 'country|message')"
-printf "${green}VPN-COUNTRY [ $geocheck_site ]:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
-printf "${green}VLESS-COUNTRY [ $geocheck_site ]: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"
-printf "${green}VPN-INTERFACE-NAME: ${reset}                 "; echo "\"$vpn_iface\""
+printf "${green}OPERA-PROXY-COUNTRY: ${reset}%s\n" "$(${geocheck_proxy}${opera_proxy} | grep -i -E 'country|message')"
+printf "${green}VPN-COUNTRY:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
+printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"; echo
+printf "${green}VPN-INTERFACE-NAME: ${reset}   "; echo "\"${vpn_iface}\""
+
 echo DONE
 echo
