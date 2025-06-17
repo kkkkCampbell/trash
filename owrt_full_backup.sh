@@ -1,46 +1,82 @@
-#!/bin/sh
+#FULL_BACKUP
 
 clear
-
-ARCHIVE_USER="archive"
-PASSWORD="$ARCHIVE_USER"
-ARCHIVE_DIR="/tmp/archive/"
-ARCHIVE_FILE=$ARCHIVE_DIR"full_RouteRich_backup_$(date +'%Y-%m-%d_%H-%M').tar"
+echo Создаём архив. Пожалуйста, подождите две минуты, процесс идёт...
+echo =================================================================
+#echo Обновляем репозитории
+#echo ======================
+SYS_ARCHIVE_FILENAME="backup-RouteRich-$(date +'%Y-%m-%d_%H-%M')"
 SHARE_NAME="archive"
+OUTPUT_DIRECTORY="/tmp/archive/"
 
 # Цвета (для ash через printf)
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# Проверка и запуск службы ksmbd
-/etc/init.d/ksmbd status >/dev/null 2>&1 || {
-    echo "▶️ Запускаю ksmbd..."
-    /etc/init.d/ksmbd start
-    /etc/init.d/ksmbd enable
-}
+mkdir -p /tmp/archive
+chmod 777 $OUTPUT_DIRECTORY
 
-echo "📁 Создаю директорию $ARCHIVE_DIR..."
-mkdir -p "$ARCHIVE_DIR"
-chmod 0777 "$ARCHIVE_DIR"
+# Создаём костыль, формирующий при каждой загрузке системы директорию /tmp/archive
+# echo -e '#!/bin/sh /etc/rc.common\n\nSTART=99\n\nboot() {\n    mkdir -p /tmp/archive && chmod 0777 /tmp/archive\n}' > /etc/init.d/mkarchive
+# chmod +x /etc/init.d/mkarchive
+# /etc/init.d/mkarchive disable
 
-# echo ${ARCHIVE_FILE}
+#opkg update && opkg install tar
 
-echo "🗃️ Создание архива /overlay в $ARCHIVE_FILE..."
-tar -cvhpf "$ARCHIVE_FILE" /overlay >/dev/null 2>&1
+echo Копируем overlay
+# Создаём временные папки для архивации
+mkdir -p /tmp/backup_staging
+mkdir -p /tmp/backup_staging/overlay
+# Копируем во временную папку каталог /overlay
+cp -r /overlay /tmp/backup_staging/
+# Из каталога /overlay/upper удаляем run и  work
+rm -rf /tmp/backup_staging/overlay/upper/run
+rm -rf /tmp/backup_staging/overlay/work
 
+
+# Создаём итоговый архив
+echo Сжимаем файлы
+cd /tmp/backup_staging
+tar -cvpf "$OUTPUT_DIRECTORY$SYS_ARCHIVE_FILENAME.tar" overlay >/dev/null
+gzip -9 -c "$OUTPUT_DIRECTORY$SYS_ARCHIVE_FILENAME.tar" > "$OUTPUT_DIRECTORY$SYS_ARCHIVE_FILENAME.tar.gz"
+rm -rf "$OUTPUT_DIRECTORY$SYS_ARCHIVE_FILENAME.tar"
+
+echo Удаляем временные папки
+# Удаляем временные папки
+rm -rf /tmp/backup_staging
+rm -rf /tmp/backup_staging/overlay
 # Очистка и создание SMB-шары
-ksmbd.addshare -d $SHARE_NAME 2>/dev/null
-ksmbd.addshare -a $SHARE_NAME  -o 'path='$ARCHIVE_DIR -o 'browseable=yes' -o 'writeable=yes' -o 'read only = no' -o 'guest ok = yes' -o 'directory mask = 0777' -o 'create mask = 0666'
+#ksmbd.addshare -d $SHARE_NAME >/dev/null
+#ksmbd.addshare -a $SHARE_NAME  -o 'path='$OUTPUT_DIRECTORY -o 'browseable=yes' -o 'writeable=yes' -o 'read only = no' -o 'guest ok = yes' -o 'directory mask = 0777' -o 'create mask = 0666' >/dev/null
 
-chmod 0777 /etc/ksmbd/ksmbd.conf
+
+# Удаляем шару
+NAME="archive"
+INDEX=$(uci show ksmbd | grep '=share' | cut -d[ -f2 | cut -d] -f1 | while read i; do
+    [ "$(uci get ksmbd.@share[$i].name)" = "$NAME" ] && echo $i && break
+done)
+
+[ -n "$INDEX" ] && uci delete ksmbd.@share[$INDEX] && uci commit ksmbd && /etc/init.d/ksmbd restart
+
+sleep 2
+
+echo Создаём сетевую папку
+# Создаём шару
+uci add ksmbd share
+uci set ksmbd.@share[-1].name="archive"
+uci set ksmbd.@share[-1].path="/tmp/archive"
+uci set ksmbd.@share[-1].guest_ok="yes"
+uci set ksmbd.@share[-1].read_only="no"
+uci set ksmbd.@share[-1].create_mask="0777"
+uci set ksmbd.@share[-1].dir_mask="0777"
+uci set ksmbd.@share[-1].inherit_owner="yes"
+uci commit ksmbd
+sleep 2
 /etc/init.d/ksmbd restart
-sleep 3
 
-# Создаём "классический" архив системы с добавлением каталога /etc и /tmp/archive (полностью)
-grep -qxF '/etc' /etc/sysupgrade.conf || echo '/etc' >> /etc/sysupgrade.conf
-grep -qxF '/tmp/archive' /etc/sysupgrade.conf || echo '/tmp/archive' >> /etc/sysupgrade.conf
-sysupgrade -b "${ARCHIVE_DIR}backup-RouteRich-$(date +'%Y-%m-%d').tar.gz"
+#chmod 0777 /etc/ksmbd/ksmbd.conf
 
+echo Извлекаем IP и hostname
 # Получение IP и hostname
 IP=$(ip -4 addr show br-lan | awk '/inet / {print $2}' | cut -d/ -f1)
 HOST=$(uci get system.@system[0].hostname)
