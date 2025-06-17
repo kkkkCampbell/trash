@@ -36,8 +36,9 @@ chmod 0777 /etc/ksmbd/ksmbd.conf
 /etc/init.d/ksmbd restart
 sleep 3
 
-# Создаём "классический" архив системы с добавлением каталога /etc (полностью)
+# Создаём "классический" архив системы с добавлением каталога /etc и /tmp/archive (полностью)
 grep -qxF '/etc' /etc/sysupgrade.conf || echo '/etc' >> /etc/sysupgrade.conf
+grep -qxF '/tmp/archive' /etc/sysupgrade.conf || echo '/tmp/archive' >> /etc/sysupgrade.conf
 sysupgrade -b "${ARCHIVE_DIR}backup-RouteRich-$(date +'%Y-%m-%d').tar.gz"
 
 # Получение IP и hostname
