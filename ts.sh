@@ -138,8 +138,8 @@ printf "${green}VPN-INTERFACE-NAME: ${reset}   "
 echo "\"${vpn_iface}\""
 
 if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
-rm -f "$RESTART_SCRIPT"
+#rm -f "$RESTART_SCRIPT"
 
 echo DONE
-
+echo
 
