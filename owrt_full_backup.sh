@@ -60,7 +60,7 @@ sleep 2
 
 echo Создаём сетевую папку
 # Создаём шару
-uci add ksmbd share
+uci add ksmbd share >/dev/null
 uci set ksmbd.@share[-1].name="$SHARE_NAME"
 uci set ksmbd.@share[-1].path="$OUTPUT_DIRECTORY"
 uci set ksmbd.@share[-1].guest_ok="yes"
