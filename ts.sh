@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Network availability check. Especially for RR and script #4
+
 green='\033[32m'
 yellow='\033[33m'
 red='\033[0;31m'
@@ -19,37 +21,41 @@ vless_proxy="sing-box tools fetch ${geocheck_site}?token=aa04d67c737a74"
 vless_proxy1="sing-box tools fetch "
 user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
 
+service_name=""
 
 # functions
 
+# Функция для обработки сервисов
 serv_stop() {
-    status_output=$(service "$1" status 2>&1)
-    printf "${green}${1}: ${reset}"
-
-    case "$status_output" in
-        "Service \"$1\" not found:")
-            echo "not installed"
-            return 1
-            ;;
-        *running*)
-            if service "$1" stop >/dev/null 2>&1; then
-                echo "stopped"
+    local SERVICES="$1"
+    RESTART_SCRIPT="/tmp/restart_services.sh"
+    local has_services=0
+    
+    # Обнуляем файл
+    echo "#!/bin/sh" > "$RESTART_SCRIPT"
+    chmod a+x "$RESTART_SCRIPT"
+    
+    for service in $SERVICES; do
+        if [ -f "/etc/init.d/$service" ]; then
+            has_services=1
+            printf "${green}%s${reset} " "${service}:"
+            
+            if /etc/init.d/"$service" status 2>/dev/null | grep -q 'running'; then
+                printf "останавливаем..."
+                
+                if /etc/init.d/"$service" stop >/dev/null 2>&1; then
+                    echo " [успешно остановлен]"
+                    echo "/etc/init.d/$service start >/dev/null 2>&1" >> "$RESTART_SCRIPT"
+                else
+                    echo " [ошибка остановки]"
+                fi
             else
-                echo "Failed to stop"
-                return 1
+                echo "остановлен ранее"
             fi
-            ;;
-        *inactive*)
-            echo "already stopped"
-            ;;
-        *)
-            echo "Unknown status: '$status_output'"
-            return 1
-            ;;
-    esac
-}
+        fi
+    done
 
-# end functions
+}
 
 clear
 
@@ -83,16 +89,15 @@ fi
 
 clear
 
-echo INSTALLED
+echo "INSTALLED"
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
 echo
 
-echo STOPPING UNNECESSARY SERVICES
-echo ==============================
-serv_stop youtubeUnblock
-serv_stop zapret
-serv_stop ruantiblock
+echo "STOP|START SERVICES"
+echo ====================
+serv_stop "youtubeUnblock zapret ruantiblock clash passwall"
+
 
 printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && \
 { service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
@@ -101,7 +106,7 @@ printf "${green}sing-box [status]: ${reset}" && service sing-box status
 printf "${green}opera-proxy [status]: ${reset}" && service opera-proxy status
 echo
 
-echo NETWORK_TEST
+echo "NETWORK_TEST"
 echo =============
 printf "${green}PING DIRECT [ ${test_site} ]: ${reset}"  && ping -q -c 4 $test_site | grep loss
 printf "${green}PING DIRECT    [ ${test_ip} ]: ${reset}" && ping -q -c 4 $test_ip | grep loss
@@ -113,7 +118,7 @@ printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $op
 printf "${green}VLESS       [ ${test_site} ]: ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
 echo
 
-echo YOUTUBE
+echo "YOUTUBE"
 echo ========
 test=$(curl -4 -s --user-agent "${user_agent}" -x ${opera_proxy} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
 printf "${green}OPERA-PROXY-COUNTRY: ${reset}" && echo $test
@@ -123,7 +128,7 @@ test=$(curl -4 -s --user-agent "${user_agent}" ${vless_proxy1} https://www.googl
 printf "${green}VLESS-PROXY-COUNTRY: ${reset}" && echo $test
 echo
 
-echo IPINFO.IO
+echo "IPINFO.IO"
 echo ==========
 vless_ip=$(sing-box tools fetch ifconfig.me -D /etc/sing-box 2>/dev/null)
 printf "${green}OPERA-PROXY-COUNTRY: ${reset}%s\n" "$(${geocheck_proxy}${opera_proxy} | grep -i -E 'country|message')"
@@ -132,5 +137,9 @@ printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_
 printf "${green}VPN-INTERFACE-NAME: ${reset}   "
 echo "\"${vpn_iface}\""
 
+if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
+rm -f "$RESTART_SCRIPT"
+
 echo DONE
-echo
+
+
