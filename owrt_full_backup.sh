@@ -67,7 +67,7 @@ uci set ksmbd.@share[-1].read_only="no"
 uci set ksmbd.@share[-1].create_mask="0777"
 uci set ksmbd.@share[-1].dir_mask="0777"
 uci set ksmbd.@share[-1].inherit_owner="yes"
-uci commit ksmbd
+uci commit ksmbd >/dev/null 2>&1
 sleep 2
 /etc/init.d/ksmbd restart
 
