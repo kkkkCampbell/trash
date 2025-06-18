@@ -50,7 +50,7 @@ rm -rf /tmp/backup_staging/overlay
 # Удаляем шару
 NAME="$SHARE_NAME"
 INDEX=$(uci show ksmbd | grep '=share' | cut -d[ -f2 | cut -d] -f1 | while read i; do
-    [ "$(uci get ksmbd.@share[$i].name)" = "$NAME" ] && break #&& echo $i 
+    [ "$(uci get ksmbd.@share[$i].name)" = "$NAME" ] && echo $i >/dev/null && break 
 done)
 
 [ -n "$INDEX" ] && uci delete ksmbd.@share[$INDEX] && uci commit ksmbd && /etc/init.d/ksmbd restart
