@@ -1,5 +1,5 @@
 #!/bin/sh
-#FULL_BACKUP
+#FULL_OPENWRT_BACKUP
 
 clear
 echo Создаём архив. Пожалуйста, подождите две минуты, процесс идёт...
@@ -22,12 +22,15 @@ chmod 777 $OUTPUT_DIRECTORY
 # /etc/init.d/mkarchive disable
 
 echo Копируем overlay
+
 # Создаём временные папки для архивации
 mkdir -p /tmp/backup_staging
 mkdir -p /tmp/backup_staging/overlay
+
 # Копируем во временную папку каталог /overlay
 cp -r /overlay /tmp/backup_staging/
-# Из каталога /overlay/upper удаляем run и  work
+
+# Из каталога /overlay удаляем лишнее
 rm -rf /tmp/backup_staging/overlay/upper/run
 rm -rf /tmp/backup_staging/overlay/work
 
@@ -46,21 +49,20 @@ rm -rf /tmp/backup_staging/overlay
 #ksmbd.addshare -d $SHARE_NAME >/dev/null
 #ksmbd.addshare -a $SHARE_NAME  -o 'path='$OUTPUT_DIRECTORY -o 'browseable=yes' -o 'writeable=yes' -o 'read only = no' -o 'guest ok = yes' -o 'directory mask = 0777' -o 'create mask = 0666' >/dev/null
 
-
-# Удаляем шару
+# Ищем шару
 NAME="$SHARE_NAME"
 INDEX=$(uci show ksmbd | grep '=share' | cut -d[ -f2 | cut -d] -f1 | while read i; do
-    [ "$(uci get ksmbd.@share[$i].name)" = "$NAME" ] && break 
+    [ "$(uci get ksmbd.@share[$i].name)" = "$NAME" ] && echo $i >/dev/null && break 
 done)
-# && echo $i >/dev/null
 
+# Удаляем шару
 [ -n "$INDEX" ] && uci delete ksmbd.@share[$INDEX] && uci commit ksmbd && /etc/init.d/ksmbd restart
 
 sleep 2
 
 echo Создаём сетевую папку
-# Создаём шару
-uci add ksmbd share >/dev/null
+# Создаём шару 
+uci add ksmbd share >dev/null
 uci set ksmbd.@share[-1].name="$SHARE_NAME"
 uci set ksmbd.@share[-1].path="$OUTPUT_DIRECTORY"
 uci set ksmbd.@share[-1].guest_ok="yes"
@@ -69,7 +71,9 @@ uci set ksmbd.@share[-1].create_mask="0777"
 uci set ksmbd.@share[-1].dir_mask="0777"
 uci set ksmbd.@share[-1].inherit_owner="yes"
 uci commit ksmbd
+
 sleep 2
+
 /etc/init.d/ksmbd restart
 
 echo Извлекаем IP и hostname
@@ -80,5 +84,4 @@ HOST=$(uci get system.@system[0].hostname)
 # Вывод итогов
 printf "\n✅ ${YELLOW}Готово! Архив доступен по адресам"; echo; echo
 printf "${YELLOW}\\\\\\\\%s\\\\%s${NC}\n" "$IP" "$SHARE_NAME"
-printf "${YELLOW}\\\\\\\\%s.lan\\\\%s${NC}\n" "$HOST" "$SHARE_NAME"
-echo; echo
+printf "${YELLOW}\\\\\\\\%s.lan\\\\%s${NC}\n" "$HOST" "$SHARE_NAME"; echo; echo
