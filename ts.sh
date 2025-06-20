@@ -21,7 +21,7 @@ vless_proxy="sing-box tools fetch ${geocheck_site}?token=aa04d67c737a74"
 vless_proxy1="sing-box tools fetch "
 user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
 
-novpn = 0
+novpn=0
 
 # functions
 
@@ -70,7 +70,7 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 	# Проверяем и выводим список интерфейсов
 	if [ -z "$interfaces" ]; then
 		echo "Интерфейсы с VPN-протоколами не найдены"
-		$novpn = 1 #exit 1
+		novpn=1 #exit 1
 	fi
 
 	echo "VPN-интерфейсы (по протоколу):"
