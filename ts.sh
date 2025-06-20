@@ -23,10 +23,11 @@ user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130
 
 novpn=0
 
+############################################
 # functions
 
 # Функция для обработки сервисов
-serv_stop() {
+service_stop() {
     local SERVICES="$1"
     RESTART_SCRIPT="/tmp/restart_services.sh"
     local has_services=0
@@ -56,6 +57,14 @@ serv_stop() {
     done
 
 }
+
+print_service_status(){
+	printf "${green}${1} [status]: ${reset}"; service ${1} status | tr -d '\n'; printf " and "; service ${1} enabled >/dev/null 2>&1 && printf "enabled\n" || printf "disabled\n"
+}
+
+# functions end
+############################################
+
 
 clear
 
@@ -93,19 +102,18 @@ clear
 
 echo "INSTALLED"
 echo ==========
-opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall"
+opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall|nfqws"
 echo
 
 echo "STOP|START SERVICES"
 echo ====================
-serv_stop "youtubeUnblock zapret ruantiblock clash passwall"
-
-
-printf "${green}DoH: ${reset}" && [ -n "$(opkg find podkop | grep '0.2.5')" ] && \
-{ service https-dns-proxy start; service https-dns-proxy enable; } || { service https-dns-proxy stop; service https-dns-proxy disable; }
-printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 5 && service podkop status
-printf "${green}sing-box [status]: ${reset}" && service sing-box status
-printf "${green}opera-proxy [status]: ${reset}" && service opera-proxy status
+service_stop "youtubeUnblock zapret"
+if opkg list-installed | grep -i -E podkop >/dev/null; then
+	printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 2 && service podkop status
+fi
+print_service_status 'https-dns-proxy'
+print_service_status 'sing-box'
+print_service_status 'opera-proxy'
 echo
 
 echo "NETWORK_TEST"
@@ -119,7 +127,9 @@ if [ "$novpn" -eq 0 ]; then
 fi
 
 printf "${green}DIRECT      [ ${test_site} ]: ${reset}"  && curl -m 10 -s $test_site | head -c 12 && echo
-printf "${green}VPN         [ ${test_site} ]: ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
+if [ "$novpn" -eq 0 ]; then
+	printf "${green}VPN         [ ${test_site} ]: ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
+fi
 printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
 printf "${green}VLESS       [ ${test_site} ]: ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
 echo
