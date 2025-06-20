@@ -21,7 +21,7 @@ vless_proxy="sing-box tools fetch ${geocheck_site}?token=aa04d67c737a74"
 vless_proxy1="sing-box tools fetch "
 user_agent="Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
 
-service_name=""
+novpn = 0
 
 # functions
 
@@ -70,7 +70,7 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 	# Проверяем и выводим список интерфейсов
 	if [ -z "$interfaces" ]; then
 		echo "Интерфейсы с VPN-протоколами не найдены"
-		exit 1
+		novpn = 1 #exit 1
 	fi
 
 	echo "VPN-интерфейсы (по протоколу):"
@@ -110,8 +110,10 @@ echo "NETWORK_TEST"
 echo =============
 printf "${green}PING DIRECT [ ${test_site} ]: ${reset}"  && ping -q -c 4 $test_site | grep loss
 printf "${green}PING DIRECT    [ ${test_ip} ]: ${reset}" && ping -q -c 4 $test_ip | grep loss
-printf "${green}PING VPN    [ ${test_site} ]: ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
-printf "${green}PING VPN       [ ${test_ip} ]: ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
+if [ "$novpn" -eq 0 ]; then
+	printf "${green}PING VPN    [ ${test_site} ]: ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
+	printf "${green}PING VPN       [ ${test_ip} ]: ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
+fi
 printf "${green}DIRECT      [ ${test_site} ]: ${reset}"  && curl -m 10 -s $test_site | head -c 12 && echo
 printf "${green}VPN         [ ${test_site} ]: ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
 printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
@@ -122,8 +124,10 @@ echo "YOUTUBE"
 echo ========
 test=$(curl -4 -s --user-agent "${user_agent}" -x ${opera_proxy} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
 printf "${green}OPERA-PROXY-COUNTRY: ${reset}" && echo $test
-test=$(curl -4 -s --user-agent "${user_agent}" --interface ${vpn_iface} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
-printf "${green}VPN-COUNTRY: ${reset}" && echo $test
+if [ "$novpn" -eq 0 ]; then
+	test=$(curl -4 -s --user-agent "${user_agent}" --interface ${vpn_iface} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
+	printf "${green}VPN-COUNTRY: ${reset}" && echo $test
+fi
 test=$(curl -4 -s --user-agent "${user_agent}" ${vless_proxy1} https://www.google.com | sed -n 's/.*"[a-z]\{2\}_\([A-Z]\{2\}\)".*/\1/p')
 printf "${green}VLESS-PROXY-COUNTRY: ${reset}" && echo $test
 echo
@@ -132,11 +136,15 @@ echo "IPINFO.IO"
 echo ==========
 vless_ip=$(sing-box tools fetch ifconfig.me -D /etc/sing-box 2>/dev/null)
 printf "${green}OPERA-PROXY-COUNTRY: ${reset}%s\n" "$(${geocheck_proxy}${opera_proxy} | grep -i -E 'country|message')"
-printf "${green}VPN-COUNTRY:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
+if [ "$novpn" -eq 0 ]; then
+	printf "${green}VPN-COUNTRY:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
+fi
 printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"; echo
-printf "${green}VPN-INTERFACE-NAME: ${reset}   "
-echo "\"${vpn_iface}\""
 
+if [ "$novpn" -eq 0 ]; then
+	printf "${green}VPN-INTERFACE-NAME: ${reset}   "
+	echo "\"${vpn_iface}\""
+fi
 if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
 #rm -f "$RESTART_SCRIPT"
 
