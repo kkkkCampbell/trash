@@ -73,18 +73,20 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 		novpn=1 #exit 1
 	fi
 
-	echo "VPN-интерфейсы (по протоколу):"
-	count=1
-	echo "$interfaces" | while read -r ifname; do
-		echo "$count. $ifname"
-		count=$((count+1))
-	done
+	if [ "$novpn" -eq 0 ]; then
+		echo "VPN-интерфейсы (по протоколу):"
+		count=1
+		echo "$interfaces" | while read -r ifname; do
+			echo "$count. $ifname"
+			count=$((count+1))
+		done
 
-	# Выбор и запись в переменную
-	read -p "Номер интерфейса: " num
-	vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
+		# Выбор и запись в переменную
+		read -p "Номер интерфейса: " num
+		vpn_iface=$(echo "$interfaces" | sed -n "${num}p")
 
-	[ -n "${vpn_iface}" ] && echo "Выбрано: ${vpn_iface}" || { echo "Ошибка"; exit 1; }
+		[ -n "${vpn_iface}" ] && echo "Выбрано: ${vpn_iface}" || { echo "Ошибка"; exit 1; }
+	fi
 fi
 
 clear
@@ -110,10 +112,12 @@ echo "NETWORK_TEST"
 echo =============
 printf "${green}PING DIRECT [ ${test_site} ]: ${reset}"  && ping -q -c 4 $test_site | grep loss
 printf "${green}PING DIRECT    [ ${test_ip} ]: ${reset}" && ping -q -c 4 $test_ip | grep loss
+
 if [ "$novpn" -eq 0 ]; then
 	printf "${green}PING VPN    [ ${test_site} ]: ${reset}"  && ping -q -c 4 -I $vpn_iface $test_site | grep loss
 	printf "${green}PING VPN       [ ${test_ip} ]: ${reset}" && ping  -q -c 4 -I $vpn_iface $test_ip | grep loss
 fi
+
 printf "${green}DIRECT      [ ${test_site} ]: ${reset}"  && curl -m 10 -s $test_site | head -c 12 && echo
 printf "${green}VPN         [ ${test_site} ]: ${reset}"  && curl -m 10 -s --interface $vpn_iface $test_site | head -c 12  && echo
 printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
