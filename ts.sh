@@ -70,7 +70,7 @@ if ! ip a show dev awg10 >/dev/null 2>&1; then
 	# Проверяем и выводим список интерфейсов
 	if [ -z "$interfaces" ]; then
 		echo "Интерфейсы с VPN-протоколами не найдены"
-		novpn = 1 #exit 1
+		$novpn = 1 #exit 1
 	fi
 
 	echo "VPN-интерфейсы (по протоколу):"
@@ -150,4 +150,3 @@ if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
 
 echo DONE
 echo
-
