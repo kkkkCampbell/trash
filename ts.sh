@@ -1,7 +1,7 @@
 #!/bin/sh
 
 clear
-echo ncheck_0.2
+echo ncheck_0.3
 sleep 3
 
 # Network availability check. Especially for RR and script #4
