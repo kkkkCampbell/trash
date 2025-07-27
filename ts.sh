@@ -59,7 +59,7 @@ service_stop() {
 }
 
 print_service_status(){
-	printf "${green}${1} [status]: ${reset}"; service ${1} status | tr -d '\n'; printf " and "; service ${1} enabled >/dev/null 2>&1 && printf "enabled\n" || printf "disabled\n"
+	printf "${green}${1} [status]: ${reset}"; /etc/init.d/${1} status | tr -d '\n'; printf " and "; /etc/init.d/${1} enabled >/dev/null 2>&1 && printf "enabled\n" || printf "disabled\n"
 }
 
 # functions end
