@@ -1,5 +1,9 @@
 #!/bin/sh
 
+clear
+echo ncheck_0.1
+sleep 3
+
 # Network availability check. Especially for RR and script #4
 
 green='\033[32m'
