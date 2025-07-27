@@ -1,7 +1,7 @@
 #!/bin/sh
 
 clear
-echo ncheck_0.1
+echo ncheck_0.2
 sleep 3
 
 # Network availability check. Especially for RR and script #4
@@ -63,7 +63,14 @@ service_stop() {
 }
 
 print_service_status(){
-	printf "${green}${1} [status]: ${reset}"; /etc/init.d/${1} status | tr -d '\n'; printf " and "; /etc/init.d/${1} enabled >/dev/null 2>&1 && printf "enabled\n" || printf "disabled\n"
+    if [ -f "/etc/init.d/${1}" ]; then
+        printf "${green}${1} [status]: ${reset}"
+        /etc/init.d/${1} status 2>/dev/null | tr -d '\n'
+        printf " and "
+        /etc/init.d/${1} enabled >/dev/null 2>&1 && printf "enabled\n" || printf "disabled\n"
+    else
+        printf "${green}${1} [status]: ${reset}service is not installed\n"
+    fi
 }
 
 # functions end
