@@ -159,11 +159,12 @@ if [ "$novpn" -eq 0 ]; then
 	printf "${green}VPN-INTERFACE-NAME: ${reset}   "
 	echo "\"${vpn_iface}\""
 fi
-107 # Получение IP и hostname
+
+# Получение IP и hostname
 IP=$(ip -4 addr show br-lan | awk '/inet / {print $2}' | cut -d/ -f1)
 HOST=$(uci get system.@system[0].hostname)
 printf "${green}LOCAL-IP: ${reset}${IP}"
-printf "${green}HOSTNAME: ${reset}LOCAL-IP: ${HOST}"
+printf "${green}HOSTNAME: ${reset}${HOST}"
 
 if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
 #rm -f "$RESTART_SCRIPT"
