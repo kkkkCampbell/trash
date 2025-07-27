@@ -121,6 +121,7 @@ echo ====================
 service_stop "youtubeUnblock zapret"
 if opkg list-installed | grep -i -E podkop >/dev/null; then
 	printf "${green}podkop [restart]: ${reset}" && service podkop restart >/dev/null 2>&1 && sleep 2 && service podkop status
+        sleep 5
 fi
 print_service_status 'https-dns-proxy'
 print_service_status 'sing-box'
