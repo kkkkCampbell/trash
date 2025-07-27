@@ -163,8 +163,8 @@ fi
 # Получение IP и hostname
 IP=$(ip -4 addr show br-lan | awk '/inet / {print $2}' | cut -d/ -f1)
 HOST=$(uci get system.@system[0].hostname)
-printf "${green}LOCAL-IP: ${reset}${IP}"
-printf "${green}HOSTNAME: ${reset}${HOST}"
+printf "${green}LOCAL-IP: ${reset}${IP}"; echo
+printf "${green}HOSTNAME: ${reset}${HOST}"; echo
 
 if [ $(wc -l < "$RESTART_SCRIPT") -gt 1 ]; then "$RESTART_SCRIPT"; fi
 #rm -f "$RESTART_SCRIPT"
