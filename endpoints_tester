@@ -1,0 +1,171 @@
+#!/bin/ash
+
+clear
+
+# Получаем доступное свободное место на корневой файловой системе (в кибибайтах)
+free_space=$(df -k / | awk 'NR==2 {print $4}')
+
+# Проверяем, что значение получено
+if [ -z "$free_space" ]; then
+    echo "Ошибка: Не удалось определить свободное место."
+    exit 1
+fi
+
+# Выясняем, достаточно свободного места на флэш-памяти, или уже всё, по домам?
+if [ "$free_space" -lt 12288 ]; then
+    echo "Не хватает места во флэш-памяти для запуска скрипта. Доступно $free_space КБ, необходимо 12 Мегабайт. Работа прекращена."
+    exit 1
+else
+    echo "Свободного места достаточно: $free_space КБ."
+	echo "Временно устанавливаем пакет python3. По окончанию работы скрипта он будет удалён автоматически."
+fi
+
+# Устанавливаем python3
+echo
+opkg update && opkg install python3
+echo; echo; echo "Выполняется поиск наиболее быстрого WARP endpoint..."
+
+
+tee /tmp/warptest > /dev/null << EOF
+import socket
+import time
+from concurrent.futures import ThreadPoolExecutor
+import ipaddress
+import statistics
+import sys
+
+def get_ip_from_subnet(ip_subnet):
+    ips = ipaddress.ip_network(ip_subnet)
+    return [str(ip) for ip in ips]
+
+def wg_ping(ip, port, timeout=1):
+    payload = (
+        "\x01\x00\x00\x00\xcb\x9c\xf0\xe7\x3b\x5c\xaa\xb2\x5b\x14\x62\x35"
+        "\x57\x90\x3c\xa1\x55\xa3\xb1\x55\x44\x66\x3f\x17\xc7\xf3\x93\x9e"
+        "\x6e\xfa\x95\x8d\xc9\xf2\x84\x57\x23\x88\xb6\x93\x1c\x0b\x74\xbb"
+        "\x11\x98\x37\x61\x2b\x54\xeb\xb9\x4e\x24\x5b\x90\xf7\xd0\x4c\xe8"
+        "\xcb\x50\xec\xda\x61\xa7\x3b\xc2\x77\xe6\x58\x76\x12\xaf\x2c\x0e"
+        "\x29\x0b\x01\x31\x6f\x75\x1f\x67\x3f\x33\x2b\x0b\xa5\x6e\x53\xf3"
+        "\x34\x82\x59\xec\xf7\x3c\xcb\x6e\x03\x1b\x6d\xa3\x12\x90\x34\xa3"
+        "\x4f\x89\x1f\x20\x1c\x3e\x7f\xe3\xd7\x21\x9f\xdc\x2f\x4d\xb0\xff"
+        "\x53\x13\xb3\x0f" + "\x00" * 40
+    )
+
+    start_time = time.time_ns()
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(timeout)
+    try:
+        sock.connect((ip, int(port)))
+        sock.send(bytes(payload, 'latin1'))
+        sock.recv(100)
+        ping = int((time.time_ns() - start_time) / 1_000_000)
+    except:
+        ping = 0
+    finally:
+        sock.close()
+    return ping
+
+def do_ping(ip_port):
+    ip, port = ip_port
+    pings = []
+    for _ in range(2):
+        px = wg_ping(ip, port, timeout=1)
+        if px == 0:
+            return (ip, port, 0)
+        pings.append(px)
+    return (ip, port, statistics.mean(pings))
+
+# Настройки сканирования
+cidrs = "162.159.192.0/24 162.159.193.0/24 162.159.195.0/24 188.114.96.0/24 188.114.97.0/24 188.114.98.0/24 188.114.99.0/24"
+ports = "2408 1701 4500 988"
+
+print("Building IP list...")
+ip_port_list = []
+for cidr in cidrs.split():
+    for ip in get_ip_from_subnet(cidr):
+        ip_port_list.extend([(ip, port) for port in ports.split()])
+
+total = len(ip_port_list)
+print(f"{total} targets generated.\nScanning...\n")
+
+results = []
+start_time = time.time()
+
+def print_progress(done):
+    elapsed = time.time() - start_time
+    speed = done / elapsed if elapsed > 0 else 0
+    eta = (total - done) / speed if speed > 0 else 0
+    percent = done / total * 100
+    sys.stdout.write(
+        f"\rProgress: {percent:6.2f}% | {done}/{total} | {speed:6.1f} addr/s | ETA: {eta:6.1f}s"
+    )
+    sys.stdout.flush()
+
+with ThreadPoolExecutor(max_workers=64) as executor:
+    for i, res in enumerate(executor.map(do_ping, ip_port_list), start=1):
+        ip, port, ping = res
+        if ping > 0:
+            results.append(res)
+        if i % 10 == 0 or i == total:
+            print_progress(i)
+
+# Завершение строки прогресса
+print("\nScan complete.\n")
+
+# Сортировка по ping
+results.sort(key=lambda x: x[2])
+
+# Формирование отчёта
+top_results = results[:1]
+# print("--------------------------")
+# print("TOP 30 fastest endpoints:\n")
+report_lines = [""]
+
+for ip, port, ping in top_results:
+    line = f"{ip}:{port}"
+    print(line)
+    report_lines.append(line + "\n")
+
+# Сохранение отчёта
+with open("/tmp/scan_report.txt", "w", encoding="utf-8") as f:
+    f.writelines(report_lines)
+
+# print("\nReport saved to scan_report.txt")
+
+EOF
+
+echo; echo
+
+# Запускаем тестер эндпоинтов.
+python3 /tmp/warptest
+
+# Читаем и сразу разделяем строку
+read -r line < /tmp/scan_report.txt 
+#/root/scan_report.txt
+ip_address="${line%%:*}"
+port="${line#*:}"
+
+# echo "$ip_address"
+# echo "$port"
+
+# Меняем старый endpoint на новый в файле /etc/config/network
+ip_addr="$ip_address"
+port_num="$port"
+
+sed -i '/^config amneziawg_awg10$/,/^config \|^$/ {
+    /^[[:space:]]*option endpoint_host /s/option endpoint_host .*/option endpoint_host '\'"$ip_addr"\'/'
+    /^[[:space:]]*option endpoint_port /s/option endpoint_port .*/option endpoint_port '\'"$port_num"\'/'
+}' /etc/config/network
+sleep 3
+echo
+
+# Перезапускаем интерфейс awg10
+ifdown awg10
+ifup awg10 
+
+# Удаляем python3
+opkg remove python3
+echo; echo "Проверяйте, как работает awg10"
+echo
+
+exit 0
