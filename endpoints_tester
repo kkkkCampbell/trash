@@ -164,7 +164,7 @@ ifdown awg10
 ifup awg10 
 
 # Удаляем python3
-opkg --force-depends --force-removal-of-dependent-packages remove python3
+opkg --force-depends --force-removal-of-dependent-packages --autoremove remove python3
 
 echo; echo "Проверяйте, как работает awg10"
 echo
