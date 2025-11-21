@@ -23,7 +23,7 @@ service zapret stop && service zapret disable
 uci delete youtubeUnblock.$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2) && uci commit
 
 # Создаём новую секцию YouTube
-tee -a /etc/config/youtubeUnblock << 'EOF'
+tee -a /etc/config/youtubeUnblock << 'EOF' >> /dev/null
 config youtubeUnblock 'youtubeUnblock'
 	option conf_strat 'ui_flags'
 	option packet_mark '32768'
