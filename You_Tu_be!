@@ -12,7 +12,7 @@ opkg install youtubeUnblock luci-app-youtubeUnblock
 sleep 3
 
 service podkop stop
-service youtubeUnblock stop
+#vservice youtubeUnblock stop
 # && service youtubeUnblock disable
 service zapret stop
 #&& service zapret disable
