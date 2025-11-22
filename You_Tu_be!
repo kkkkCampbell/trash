@@ -1,21 +1,23 @@
 #!/bin/ash
+clear
 
 # Бэкапим конфигу
-
-# sysupgrade -b /tempbackup.tar.gz
+echo "Создаём архвную копию конфигурации в файле /tempbackup.tar.gz"
+echo "====="
+[ ! -f /tempbackup.tar.gz ] && sysupgrade -b /tempbackup.tar.gz
+echo; echo
 
 # Устанавливаем вебфейс анблока
+echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
+echo "====="
 opkg update
-opkg install youtubeUnblock luci-app-youtubeUnblock 
-#zapret luci-app-zapret
+opkg install youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret
 
 sleep 3
 
 # service podkop stop
 service youtubeUnblock stop
-# && service youtubeUnblock disable
-service zapret stop
-#&& service zapret disable
+service zapret stop && service zapret disable
 
 sleep 3
 
@@ -236,7 +238,6 @@ SECTION=$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2)
 uci commit
 sleep 1
 service youtubeUnblock restart && service youtubeUnblock enable
-clear
 echo
 echo "ПРОВЕРЯЙТЕ РАБОТУ ЮТУБ."
 echo
