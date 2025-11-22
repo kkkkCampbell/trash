@@ -5,7 +5,7 @@ clear
 echo "Создаём архвную копию конфигурации в файле /tempbackup.tar.gz"
 echo "====="
 [ ! -f /tempbackup.tar.gz ] && sysupgrade -b /tempbackup.tar.gz
-echo; echo
+echo "Архив /tempbackup.tar.gz создан"; echo
 
 # Устанавливаем вебфейс анблока
 echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
