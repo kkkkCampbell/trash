@@ -245,8 +245,11 @@ EOF
 #uci reorder youtubeUnblock.${SECTION}=1
 uci commit
 sleep 1
-service youtubeUnblock restart && service youtubeUnblock enable
+service youtubeUnblock enable
 echo
-echo "ПРОВЕРЯЙТЕ РАБОТУ ЮТУБ."
-echo
+echo -e "\033[31;1mРоутер будет перезагружен через 10 секунд.\033[0m" 
+echo -e "\033[31;1mПосле перезагрузки проверьте работу Ютуб.\033[0m"
+sleep 10
+reboot
+
 #
