@@ -237,7 +237,7 @@ EOF
 SECTION=$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2)
 # echo "${SECTION}"
 # Переносим секцию YouTube на первую позицию списка
-uci reorder youtubeUnblock.${SECTION}=1
+#uci reorder youtubeUnblock.${SECTION}=1
 uci commit
 sleep 1
 service youtubeUnblock restart
