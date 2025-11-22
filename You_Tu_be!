@@ -14,8 +14,10 @@ sleep 3
 service podkop stop
 service youtubeUnblock stop
 # && service youtubeUnblock disable
-service zapret stop && service zapret disable
+service zapret stop
+#&& service zapret disable
 
+sleep 3
 
 # Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
 
