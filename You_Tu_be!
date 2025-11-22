@@ -249,6 +249,7 @@ service youtubeUnblock enable
 echo
 echo -e "\033[31;1mРоутер будет перезагружен через 10 секунд.\033[0m" 
 echo -e "\033[31;1mПосле перезагрузки проверьте работу Ютуб.\033[0m"
+echo
 sleep 10
 reboot
 
