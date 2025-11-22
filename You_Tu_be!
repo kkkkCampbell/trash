@@ -1,4 +1,5 @@
 #!/bin/ash
+clear
 echo "0.1" && sleep 3
 clear
 
