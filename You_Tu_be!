@@ -240,7 +240,7 @@ SECTION=$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2)
 #uci reorder youtubeUnblock.${SECTION}=1
 uci commit
 sleep 1
-service youtubeUnblock restart
+service youtubeUnblock restart && service youtubeUnblock enable
 clear
 echo
 echo "ПРОВЕРЯЙТЕ РАБОТУ ЮТУБ."
