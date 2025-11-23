@@ -37,7 +37,7 @@ config section
 	option name 'YouTube'
 	option enabled '1'
 	option tls_enabled '1'
-	option fake_sni '1'
+	option fake_sni '0'
 	option faking_strategy 'tcp_check'
 	option fake_sni_seq_len '1'
 	option fake_sni_type 'default'
