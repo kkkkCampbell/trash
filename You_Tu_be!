@@ -64,9 +64,11 @@ main() {
 	done
 
 	# Останавливаем сервисы
-	# service podkop stop
-	service youtubeUnblock stop
-	service zapret stop && service zapret disable
+	for service in youtubeUnblock zapret; do
+	    if /etc/init.d/$service status | grep -q "running"; then
+	        /etc/init.d/$service stop && service $service disable
+	    fi
+	done
 	sleep 1
 
 	# Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
