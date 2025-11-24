@@ -3,7 +3,7 @@
 main() {
 
 	clear
-	echo "v0.2" && sleep 3
+	echo "v0.3" && sleep 3
 	clear
 
 	# Выбор стратегии
@@ -64,8 +64,8 @@ main() {
 	done
 
 	# Останавливаем сервисы
-    service zapret stop && service zapret disable >/dev/nul
-	service youtubeUnblock stop && service youtubeUnblock disable >/dev/nul
+    service zapret stop && service zapret disable >/dev/null
+	service youtubeUnblock stop && service youtubeUnblock disable >/dev/null
 	sleep 1
 
 	# Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
@@ -104,7 +104,7 @@ main() {
 		;;
 	esac
 	
-	service youtubeUnblock enable
+	service youtubeUnblock enable >/dev/null
 	service youtubeUnblock restart >/dev/null
 }
 
