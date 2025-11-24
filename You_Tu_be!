@@ -64,8 +64,8 @@ main() {
 	done
 
 	# Останавливаем сервисы
-    service zapret stop >/dev/null && service zapret disable >/dev/null
-	service youtubeUnblock stop >/dev/null && service youtubeUnblock disable >/dev/null
+    service zapret stop >/dev/null 2>&1 && service zapret disable >/dev/null 2>&1
+	service youtubeUnblock stop >/dev/null 2>&1 && service youtubeUnblock disable >/dev/null 2>&1
 	sleep 1
 
 	# Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
@@ -82,7 +82,7 @@ main() {
 	else
 		echo "Секция YouTube не найдена"
 	fi
-	
+
 	sleep 2
 
 	# Создаём новую секцию YouTube
@@ -104,8 +104,8 @@ main() {
 		;;
 	esac
 	
-	service youtubeUnblock enable >/dev/null
-	service youtubeUnblock restart >/dev/null
+	service youtubeUnblock enable >/dev/null 2>&1
+	service youtubeUnblock restart >/dev/null 2>&1
 }
 
 
