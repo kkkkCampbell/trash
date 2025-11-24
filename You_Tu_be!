@@ -65,7 +65,7 @@ main() {
 
 	# Останавливаем сервисы
 	# service podkop stop
-	# service youtubeUnblock stop
+	service youtubeUnblock stop
 	service zapret stop && service zapret disable
 	sleep 1
 
@@ -81,7 +81,7 @@ main() {
 		sleep 1
 		uci commit
 	else
-		echo "Секция YouTube не найдена, ничего не удаляем"
+		echo "Секция YouTube не найдена"
 	fi
 	
 	sleep 2
