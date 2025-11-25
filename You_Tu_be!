@@ -418,6 +418,7 @@ URLS="	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubego.id'
 	list sni_domains 'youtubego.in'"
 main
+sleep 10
 echo
 echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
 echo
