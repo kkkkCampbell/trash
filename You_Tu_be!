@@ -20,6 +20,7 @@ main() {
 	echo "7 - Стратегия tcp_check_1"
 	echo
 	echo "0 - Выход"
+	echo
 	printf "Введите номер выбранной стратегии > "
 	read idx
 	echo
