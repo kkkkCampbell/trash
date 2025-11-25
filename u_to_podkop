@@ -1,9 +1,5 @@
 #!/bin/sh
 
-service podkop stop
-service zapret stop && service zapret disable
-service youtubeUnblock stop && service youtubeUnblock disable
-
 clear
 echo "v0.1"
 sleep 3
@@ -30,6 +26,11 @@ if [ -z "$second_section" ]; then
     echo
     exit 1
 fi
+
+# Останавливаем ненужные сервисы
+service podkop stop
+service zapret stop && service zapret disable
+service youtubeUnblock stop && service youtubeUnblock disable
 
 # Создаем backup
 cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
