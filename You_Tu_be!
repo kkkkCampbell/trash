@@ -11,6 +11,7 @@ main() {
 	echo "Выберите стратегию:"
 	echo
 	echo "1 - Стратегия по умолчанию (из коробки)"
+	echo
 	echo "2 - Стратегия pastseq_1"
 	echo "3 - Стратегия pastseq_2"
 	echo "4 - Стратегия pastseq_3"
