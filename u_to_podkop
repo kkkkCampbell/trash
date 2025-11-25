@@ -1,0 +1,32 @@
+#!/bin/sh
+
+service podkop stop
+service zapret stop && service zapret disable
+service youtubeUnblock stop && service youtubeUnblock disable
+
+CONFIG_FILE="/etc/config/podkop"
+
+# Создаем backup
+cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+
+# Удаляем все list community_lists 'youtube'
+sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE"
+
+# Находим вторую секцию
+second_section=$(grep "^config section '" "$CONFIG_FILE" | sed -n '2p')
+
+# Извлекаем имя секции (часть в кавычках)
+section_name=$(echo "$second_section" | sed -n "s/^config section '\([^']*\)'.*$/\1/p")
+
+# Заменяем строку с секцией на саму себя + list community_lists 'youtube'
+sed -i "s/^config section '${section_name}'/&\\n\\tlist community_lists 'youtube'/" "$CONFIG_FILE"
+
+service podkop start && service podkop enable
+
+clear
+
+echo
+
+echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
+
+echo
