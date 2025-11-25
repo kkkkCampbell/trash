@@ -3,7 +3,7 @@
 main() {
 
 	clear
-	echo "v0.3" && sleep 3
+	echo "v0.4" && sleep 3
 	clear
 
 	# Выбор стратегии
@@ -16,7 +16,8 @@ main() {
 	echo "3 - Стратегия pastseq_2"
 	echo "4 - Стратегия pastseq_3"
 	echo "5 - Стратегия randseq_1"
-	echo "6 - Стратегия tcp_check_1"
+	echo "6 - Стратегия randseq_2"
+	echo "7 - Стратегия tcp_check_1"
 	echo
 	echo "0 - Выход"
 	printf "Введите номер выбранной стратегии > "
@@ -236,8 +237,35 @@ STRATEGY_5="config section
 	option udp_filter_quic 'all'
 	option udp_faking_strategy 'none'
 	option udp_stun_filter '0'"
-  
+	
 STRATEGY_6="config section
+	option name 'YouTube'
+	option enabled '1'
+	option tls_enabled '1'
+	option fake_sni '1'
+	option faking_strategy 'randseq'
+	option fake_sni_seq_len '2'
+	option fake_sni_type 'default'
+	option frag 'tcp'
+	option seg2delay '0'
+	option synfake '0'
+	option sni_detection 'parse'
+	option all_domains '0'
+	option quic_drop '0'
+	option udp_mode 'fake'
+	option udp_fake_seq_len '6'
+	option udp_fake_len '64'
+	option udp_filter_quic 'all'
+	option udp_faking_strategy 'none'
+	option udp_stun_filter '0'
+	option fake_seq_offset '0'
+	option frag_sni_reverse '1'
+	option frag_sni_faked '0'
+	option frag_middle_sni '1'
+	option frag_sni_pos '1'
+	option fk_winsize '0'"
+  
+STRATEGY_7="config section
 	option name 'YouTube'
 	option enabled '1'
 	option tls_enabled '1'
