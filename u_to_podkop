@@ -5,6 +5,9 @@ service zapret stop && service zapret disable
 service youtubeUnblock stop && service youtubeUnblock disable
 
 clear
+echo "v0.1"
+sleep 3
+clear
 
 echo
 echo "Добавляем Ютуб во вторую секцию подкопа"
