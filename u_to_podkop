@@ -26,6 +26,8 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
+service podkop stop
+
 # Создаем backup
 cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
@@ -57,7 +59,7 @@ sed -i "s/^config section '${section_name}'/&\\n\\tlist community_lists 'youtube
 
 echo "Готово! Добавлено в секцию: $target_section"
 
-service podkop start && service podkop enable
+service podkop restart && service podkop enable
 
 ifup awg10
 
