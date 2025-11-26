@@ -2,7 +2,7 @@
 # Ютуб в подкоп
 
 clear
-echo "v0.2"
+echo "v0.1"
 sleep 3
 clear
 
