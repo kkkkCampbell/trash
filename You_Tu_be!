@@ -12,8 +12,12 @@ main() {
 	{ sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
 	echo
 	
+	service podkop stop
+	
 	# Удаляем все list community_lists 'youtube' из подкопа
 	if [ -f "/etc/config/podkop" ]; then sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"; fi
+	
+	service podkop start
 	
 	# Проверка наличия необходимых пакетов
 	TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
