@@ -2,48 +2,75 @@
 # Селектор стратегий для youtubeUnblock 
 
 clear
-echo "v0.1" && sleep 3
+echo "Селектор стратегий для youtubeUnblock v0.2"
+echo
+
+# Проверяем наличие в системе подкопа
+PACKAGE="podkop"
+REQUIRED_VERSION="v0.7"
+PODKOP_NI=0
+# Получаем информацию об установленном пакете
+INSTALLED_INFO=$(opkg list-installed | grep "^$PACKAGE ")
+if [ -z "$INSTALLED_INFO" ]; then 
+	PODKOP_NI=1 
+	echo
+	echo -e "\033[33mPodkop не установлен, часть функций недоступна\033[0m"
+else
+	# Извлекаем версию подкопа
+	VERSION=$(echo "$INSTALLED_INFO" | awk '{print $3}')
+	# Проверяем, содержит ли версия требуемую подстроку
+	if echo "$VERSION" | grep -q "$REQUIRED_VERSION"; then
+		echo -e "\033[32mВерсия пакета $PACKAGE: $VERSION\033[0m"
+	else
+		echo -e "\033[33mУстановленная версия пакета $PACKAGE не актуальна\033[0m"
+		echo -e "\033[33mРекомендуется обновить $PACKAGE до последней версии\033[0m"
+		echo -e "\033[33mЧасть функций недоступна\033[0m"
+		PODKOP_NI=1
+	fi
+fi
+
+sleep 5
+
+# Проверяем наличия в системе необходимых для работы пакетов
+TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
+
+for pkg in $TARGET_PKGS; do
+	# opkg list-installed выводит "имя - версия"
+	# grep ищет строку, начинающуюся (^) с имени пакета
+	if ! opkg list-installed "$pkg" | grep -q "^$pkg"; then
+		# Устанавливаем вебфейс анблока итп.
+		echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
+		echo "====="
+		opkg update
+		opkg install youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret
+		sleep 1
+		break
+	fi
+done
 
 main() {
 	# Бэкапим конфигу
 	echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
-	echo "====="
+	# echo "====="
 	[ -f /tempbackup.tar.gz ] && echo "Архив /tempbackup.tar.gz уже существует" || \
 	{ sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
 	echo
 	
-	service podkop stop >/dev/null 2>&1
-	
-	# Удаляем все list community_lists 'youtube' из подкопа
-	if [ -f "/etc/config/podkop" ]; then sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"; fi
-	
-	
-	# Проверка наличия необходимых пакетов
-	TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
-
-	# 2. Проверяем каждый пакет
-	for pkg in $TARGET_PKGS; do
-		# opkg list-installed выводит "имя - версия"
-		# grep ищет строку, начинающуюся (^) с имени пакета
-		if ! opkg list-installed "$pkg" | grep -q "^$pkg"; then
-			# Устанавливаем вебфейс анблока итп.
-			echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
-			echo "====="
-			opkg update
-			opkg install youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret
-			sleep 1
-			break
-		fi
-	done
-
 	# Останавливаем сервисы
     service zapret stop >/dev/null 2>&1
 	service zapret disable >/dev/null 2>&1
 	service youtubeUnblock stop >/dev/null 2>&1
 	service youtubeUnblock disable >/dev/null 2>&1
-	sleep 1
+	service podkop stop >/dev/null 2>&1
+	sleep 1	
 
-	u_section_delete
+	# Удаляем все list community_lists 'youtube' из подкопа
+	if [ "$PODKOP_NI" -ne 1 ]; then 
+		if [ -f "/etc/config/podkop" ]; then 
+			sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"
+		fi
+	fi
+	# Удаляем секцию YouTube из ЮАБ
 
 	sleep 1
 
@@ -265,6 +292,27 @@ STRATEGY_7="config section
 	option udp_faking_strategy 'none'
 	option udp_stun_filter '0'"
 	
+STRATEGY_8="config section
+	option name 'YouTube'
+	option enabled '1'
+	option tls_enabled '1'
+	option fake_sni '1'
+	option faking_strategy 'tcp_check'
+	option fake_sni_seq_len '1'
+	option fake_sni_type 'default'
+	option frag 'none'
+	option seg2delay '0'
+	option synfake '0'
+	option sni_detection 'parse'
+	option all_domains '0'
+	option quic_drop '0'
+	option udp_mode 'fake'
+	option udp_fake_seq_len '6'
+	option udp_fake_len '64'
+	option udp_filter_quic 'all'
+	option udp_faking_strategy 'none'
+	option udp_stun_filter '0'"
+	
 
 URLS="	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubei.googleapis.com'
@@ -466,11 +514,13 @@ echo "
  5 - Стратегия randseq_1
  6 - Стратегия randseq_2
  7 - Стратегия tcp_check_1
- 
- 9 - Ничего не помогло. Хочу ютуб через podkop!
- 0 - Выход
-
+ 8 - Стратегия tcp_check_2
+ "
+if [ "$PODKOP_NI" -ne 1 ]; then echo " 9 - Ничего не помогло. Хочу ютуб через podkop!"; fi
+echo " 0 - Выход
 "
+
+
 	printf "Введите номер выбранной стратегии > "
 	read idx
 	echo
@@ -486,17 +536,20 @@ echo "
 #			# Проверка на "не число" или пустоту
 #			echo "Ошибка: введите номер стратегии"; exit 1 
 #			;;
-		9) 	service zapret stop >/dev/null 2>&1
-			service zapret disable >/dev/null 2>&1
-			service youtubeUnblock stop >/dev/null 2>&1
-			service youtubeUnblock disable >/dev/null 2>&1
-			sleep 1
-			u_section_delete
-			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
-			exit 0
-			;;
+		 9)  	
+			 if [ "$PODKOP_NI" -ne 1 ]; then
+			 	 service zapret stop >/dev/null 2>&1
+				 service zapret disable >/dev/null 2>&1
+				 service youtubeUnblock stop >/dev/null 2>&1
+				 service youtubeUnblock disable >/dev/null 2>&1
+				 sleep 1
+				 u_section_delete
+				 sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
+				 exit 0
+			 fi
+		;;
 		*) 
-			# Все остальные варианты (числа 1, 2, 3...)
+			# Все остальные варианты (числа 1, 2, 3...9)
 				if echo "$idx" | grep -qE '^[0-9]$'; then
 					eval "SELECTED_STRATEGY=\$STRATEGY_$idx"
 					main
@@ -508,9 +561,9 @@ echo "
 					echo
 					echo "Выбрана стратегия №" "$idx"
 					printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
-					read strat
+					read strat_working
 
-					if [ "$strat" = "1" ]; then
+					if [ "$strat_working" = "1" ]; then
 						echo "Успех! Завершаем работу."
 						echo
 						exit 0
