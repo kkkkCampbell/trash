@@ -26,14 +26,14 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-service podkop stop
+service podkop stop >/dev/null 2>&1
 
 # Создаем backup
 cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 
 # Удаляем все list community_lists 'youtube'
-sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE"
+sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/dev/null 2>&1
 
 # Находим все секции
 sections=$(grep "^config section '" "$CONFIG_FILE")
@@ -59,7 +59,8 @@ sed -i "s/^config section '${section_name}'/&\\n\\tlist community_lists 'youtube
 
 echo "Готово! Добавлено в секцию: $target_section"
 
-service podkop restart && service podkop enable
+service podkop restart >/dev/null 2>&1
+service podkop enable >/dev/null 2>&1
 
 ifup awg10
 
