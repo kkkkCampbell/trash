@@ -484,7 +484,8 @@ echo "
 #			echo "Ошибка: введите номер стратегии"; exit 1 
 #			;;
 		9) 	u_section_delete
-			service youtubeUnblock restart >/dev/null 2>&1
+			service zapret stop >/dev/null 2>&1 && service zapret disable >/dev/null 2>&1
+			service youtubeUnblock stop >/dev/null 2>&1 && service youtubeUnblock disable >/dev/null 2>&1
 			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
 			exit 0
 			;;
