@@ -1,36 +1,29 @@
 #!/bin/sh
 
 clear
-echo "v0.1"
+echo "v0.2"
 sleep 3
 clear
 
+# Проверяем наличие подкопа в системе
+if ! opkg list-installed | grep -q '^podkop'; then
+	echo; echo "Podkop не установлен! Завершаю работу."; echo
+	echo "УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845"
+	echo
+	exit 1
+fi
+
 echo
-echo "Добавляем Ютуб во вторую секцию подкопа"
+echo "Добавляем Ютуб в подкоп"
 echo
+
 CONFIG_FILE="/etc/config/podkop"
 
 # Проверяем существование файла
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "Ошибка: Файл $CONFIG_FILE не существует"
-    echo
     exit 1
 fi
-
-# Находим вторую секцию
-second_section=$(grep "^config section '" "$CONFIG_FILE" | sed -n '2p')
-
-# Проверяем, найдена ли вторая секция
-if [ -z "$second_section" ]; then
-    echo "Ошибка: Вторая секция не найдена в файле $CONFIG_FILE"
-    echo
-    exit 1
-fi
-
-# Останавливаем ненужные сервисы
-service podkop stop
-service zapret stop && service zapret disable
-service youtubeUnblock stop && service youtubeUnblock disable
 
 # Создаем backup
 cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
@@ -39,17 +32,35 @@ echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 # Удаляем все list community_lists 'youtube'
 sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE"
 
+# Находим все секции
+sections=$(grep "^config section '" "$CONFIG_FILE")
+
+# Проверяем количество секций
+section_count=$(echo "$sections" | wc -l)
+
+if [ "$section_count" -ge 2 ]; then
+    # Если есть вторая секция, используем её
+    target_section=$(echo "$sections" | sed -n '2p')
+    echo "Найдена вторая секция: $target_section"
+else
+    # Если второй секции нет, используем первую
+    target_section=$(echo "$sections" | sed -n '1p')
+    echo "Вторая секция не найдена, используем первую: $target_section"
+fi
+
 # Извлекаем имя секции (часть в кавычках)
-section_name=$(echo "$second_section" | sed -n "s/^config section '\([^']*\)'.*$/\1/p")
+section_name=$(echo "$target_section" | sed -n "s/^config section '\([^']*\)'.*$/\1/p")
 
 # Заменяем строку с секцией на саму себя + list community_lists 'youtube'
 sed -i "s/^config section '${section_name}'/&\\n\\tlist community_lists 'youtube'/" "$CONFIG_FILE"
 
-echo "Готово! Добавлено во вторую секцию: $second_section"
+echo "Готово! Добавлено в секцию: $target_section"
 
 service podkop start && service podkop enable
 
 ifup awg10
+
+sleep 7
 
 echo
 
