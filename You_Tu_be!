@@ -1,26 +1,29 @@
 #!/bin/sh
 clear
-echo "v0.2" && sleep 3
+echo "v0.3" && sleep 3
 
 main() {
 
 	clear
 
-	# Выбор стратегии
-	echo
-	echo "Выберите стратегию:"
-	echo
-	echo "1 - Стратегия по умолчанию (из коробки)"
-	echo
-	echo "2 - Стратегия pastseq_1"
-	echo "3 - Стратегия pastseq_2"
-	echo "4 - Стратегия pastseq_3"
-	echo "5 - Стратегия randseq_1"
-	echo "6 - Стратегия randseq_2"
-	echo "7 - Стратегия tcp_check_1"
-	echo
-	echo "0 - Выход"
-	echo
+# Выбор стратегии
+echo "
+	
+Выберите стратегию:
+
+ 1 - Стратегия по умолчанию (из коробки)
+ 
+ 2 - Стратегия pastseq_1
+ 3 - Стратегия pastseq_2
+ 4 - Стратегия pastseq_3
+ 5 - Стратегия randseq_1
+ 6 - Стратегия randseq_2
+ 7 - Стратегия tcp_check_1
+ 
+ 9 - Ничего не помогло. Хочу ютуб через podkop!
+ 0 - Выход
+
+"
 	printf "Введите номер выбранной стратегии > "
 	read idx
 	echo
@@ -34,7 +37,11 @@ main() {
 			;;
 		''|*[!0-9]*) 
 			# Проверка на "не число" или пустоту
-			echo "Ошибка: введите только число!"; exit 1 
+			echo "Ошибка: введите номер стратегии"; exit 1 
+			;;
+		9) clear; echo; echo "Ютуб через podkop";
+			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop) & 
+			exit 0
 			;;
 		*) 
 			# Все остальные варианты (числа 1, 2, 3...)
