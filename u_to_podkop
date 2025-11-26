@@ -62,16 +62,10 @@ echo "Готово! Добавлено в секцию: $target_section"
 service podkop restart >/dev/null 2>&1
 service podkop enable >/dev/null 2>&1
 
-ifup awg10
-
-sleep 7
-
 echo
 
 echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
 sleep 10
 reboot
-
-echo
 
 exit 0
