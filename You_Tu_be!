@@ -1,9 +1,9 @@
 #!/bin/sh
+clear
+echo "v0.2" && sleep 3
 
 main() {
 
-	clear
-	echo "v0.4" && sleep 3
 	clear
 
 	# Выбор стратегии
@@ -471,9 +471,25 @@ URLS="	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubego.com.br'
 	list sni_domains 'youtubego.id'
 	list sni_domains 'youtubego.in'"
-main
-sleep 10
+
 echo
 echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
 echo
+
+while true; do
+    main
+    sleep 10
+    echo
+    echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
+    echo
+    printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
+    read strat
+
+    if [ "$strat" = "1" ]; then
+        echo "Успех! Завершаем работу."
+		echo
+        exit 0
+    fi
+done
+
 exit 0
