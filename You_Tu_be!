@@ -17,7 +17,6 @@ main() {
 	# Удаляем все list community_lists 'youtube' из подкопа
 	if [ -f "/etc/config/podkop" ]; then sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"; fi
 	
-	service podkop start >/dev/null 2>&1
 	
 	# Проверка наличия необходимых пакетов
 	TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
@@ -38,8 +37,10 @@ main() {
 	done
 
 	# Останавливаем сервисы
-    service zapret stop >/dev/null 2>&1 && service zapret disable >/dev/null 2>&1
-	service youtubeUnblock stop >/dev/null 2>&1 && service youtubeUnblock disable >/dev/null 2>&1
+    service zapret stop >/dev/null 2>&1
+	service zapret disable >/dev/null 2>&1
+	service youtubeUnblock stop >/dev/null 2>&1
+	service youtubeUnblock disable >/dev/null 2>&1
 	sleep 1
 
 	u_section_delete
@@ -65,8 +66,10 @@ main() {
 		;;
 	esac
 	
+	service podkop start >/dev/null 2>&1
+	service podkop enable >/dev/null 2>&1
 	service youtubeUnblock enable >/dev/null 2>&1
-	service youtubeUnblock restart >/dev/null 2>&1
+	service youtubeUnblock start >/dev/null 2>&1
 }
 
 u_section_delete() {
@@ -483,14 +486,17 @@ echo "
 #			# Проверка на "не число" или пустоту
 #			echo "Ошибка: введите номер стратегии"; exit 1 
 #			;;
-		9) 	u_section_delete
-			service zapret stop >/dev/null 2>&1 && service zapret disable >/dev/null 2>&1
-			service youtubeUnblock stop >/dev/null 2>&1 && service youtubeUnblock disable >/dev/null 2>&1
+		9) 	service zapret stop >/dev/null 2>&1
+			service zapret disable >/dev/null 2>&1
+			service youtubeUnblock stop >/dev/null 2>&1
+			service youtubeUnblock disable >/dev/null 2>&1
+			sleep 1
+			u_section_delete
 			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
 			exit 0
 			;;
 		*) 
-			# Все остальные варианты (цифры 0, 1, 2, 3...9)
+			# Все остальные варианты (числа 1, 2, 3...)
 				if echo "$idx" | grep -qE '^[0-9]$'; then
 					eval "SELECTED_STRATEGY=\$STRATEGY_$idx"
 					main
