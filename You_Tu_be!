@@ -2,7 +2,7 @@
 # Селектор стратегий для youtubeUnblock 
 
 clear
-echo "v0.3" && sleep 3
+echo "v0.1" && sleep 3
 
 main() {
 	# Бэкапим конфигу
