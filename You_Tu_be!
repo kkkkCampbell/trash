@@ -3,7 +3,6 @@
 
 clear
 echo "Селектор стратегий для youtubeUnblock v0.2"
-echo
 
 # Проверяем наличие в системе подкопа
 PACKAGE="podkop"
