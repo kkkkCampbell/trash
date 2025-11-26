@@ -1,6 +1,6 @@
 #!/bin/sh
 clear
-echo "v0.2" && sleep 3
+echo "v0.4" && sleep 3
 
 main() {
 
@@ -50,7 +50,7 @@ main() {
 	echo
 	
 	# Удаляем все list community_lists 'youtube' из подкопа
-	sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"
+	if [ -f "/etc/config/podkop" ]; then sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"; fi
 	
 	# Проверка наличия необходимых пакетов
 	TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
@@ -478,10 +478,11 @@ echo
 
 while true; do
     main
-    sleep 10
+    sleep 5
     echo
     echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
     echo
+	echo "Выбрана стратегия №" "$idx"
     printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
     read strat
 
