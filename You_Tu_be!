@@ -1,6 +1,6 @@
 #!/bin/sh
 clear
-echo "v0.4" && sleep 3
+echo "v0.2" && sleep 3
 
 main() {
 
