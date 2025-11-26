@@ -1,54 +1,10 @@
 #!/bin/sh
+# Селектор стратегий для youtubeUnblock 
+
 clear
 echo "v0.3" && sleep 3
 
 main() {
-
-	clear
-
-# Выбор стратегии
-echo "
-	
-Выберите стратегию:
-
- 1 - Стратегия по умолчанию (из коробки)
- 
- 2 - Стратегия pastseq_1
- 3 - Стратегия pastseq_2
- 4 - Стратегия pastseq_3
- 5 - Стратегия randseq_1
- 6 - Стратегия randseq_2
- 7 - Стратегия tcp_check_1
- 
- 9 - Ничего не помогло. Хочу ютуб через podkop!
- 0 - Выход
-
-"
-	printf "Введите номер выбранной стратегии > "
-	read idx
-	echo
-
-	case "$idx" in
-		0)
-			# Если пользователь ввел 0 — выходим без ошибки
-			echo "Выход..."
-			echo
-			exit 0 
-			;;
-		''|*[!0-9]*) 
-			# Проверка на "не число" или пустоту
-			echo "Ошибка: введите номер стратегии"; exit 1 
-			;;
-		9) clear; echo; echo "Ютуб через podkop";
-			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop) & 
-			exit 0
-			;;
-		*) 
-			# Все остальные варианты (числа 1, 2, 3...)
-			eval "SELECTED_STRATEGY=\$STRATEGY_$idx"
-			;;
-	esac
-
 	# Бэкапим конфигу
 	echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
 	echo "====="
@@ -82,22 +38,9 @@ echo "
 	service youtubeUnblock stop >/dev/null 2>&1 && service youtubeUnblock disable >/dev/null 2>&1
 	sleep 1
 
-	# Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
-	# Удаляем секцию YouTube
-	# uci delete youtubeUnblock.$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2) && uci commit
-	section_id=$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2)
+	u_section_delete
 
-	# Проверяем, что section_id не пустой
-	if [ -n "$section_id" ]; then
-		echo "Удаляем секцию YouTube: $section_id"
-		uci delete youtubeUnblock.$section_id
-		sleep 1
-		uci commit
-	else
-		echo "Секция YouTube не найдена"
-	fi
-
-	sleep 2
+	sleep 1
 
 	# Создаём новую секцию YouTube
 	echo "Создаём новую секцию YouTube"
@@ -122,7 +65,23 @@ echo "
 	service youtubeUnblock restart >/dev/null 2>&1
 }
 
+u_section_delete() {
 
+	# Меняем конфиг ЮАБ на конфиг от zapret и правим настройки
+	# Удаляем секцию YouTube
+	# uci delete youtubeUnblock.$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2) && uci commit
+	section_id=$(uci show youtubeUnblock | grep "name='YouTube'" | cut -d. -f2)
+
+	# Проверяем, что section_id не пустой
+	if [ -n "$section_id" ]; then
+		echo "Удаляем секцию YouTube: $section_id"
+		uci delete youtubeUnblock.$section_id
+		sleep 1
+		uci commit
+	else
+		echo "Секция YouTube не найдена"
+	fi
+}
 
 
 
@@ -484,20 +443,69 @@ echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
 echo
 
 while true; do
-    main
-    sleep 5
-    echo
-    echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
-    echo
-	echo "Выбрана стратегия №" "$idx"
-    printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
-    read strat
 
-    if [ "$strat" = "1" ]; then
-        echo "Успех! Завершаем работу."
-		echo
-        exit 0
-    fi
+clear
+
+# Выбор стратегии
+echo "
+	
+Выберите стратегию:
+
+ 1 - Стратегия по умолчанию (из коробки)
+ 
+ 2 - Стратегия pastseq_1
+ 3 - Стратегия pastseq_2
+ 4 - Стратегия pastseq_3
+ 5 - Стратегия randseq_1
+ 6 - Стратегия randseq_2
+ 7 - Стратегия tcp_check_1
+ 
+ 9 - Ничего не помогло. Хочу ютуб через podkop!
+ 0 - Выход
+
+"
+	printf "Введите номер выбранной стратегии > "
+	read idx
+	echo
+
+	case "$idx" in
+		0)
+			# Если пользователь ввел 0 — выходим без ошибки
+			echo "Выход..."
+			echo
+			exit 0 
+			;;
+#		''|*[!0-9]*) 
+#			# Проверка на "не число" или пустоту
+#			echo "Ошибка: введите номер стратегии"; exit 1 
+#			;;
+		9) 	u_section_delete
+			sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
+			exit 0
+			;;
+		*) 
+			# Все остальные варианты (числа 1, 2, 3...)
+				if echo "$idx" | grep -qE '^[0-9]$'; then
+					eval "SELECTED_STRATEGY=\$STRATEGY_$idx"
+					main
+
+					sleep 5
+
+					echo
+					echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
+					echo
+					echo "Выбрана стратегия №" "$idx"
+					printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
+					read strat
+
+					if [ "$strat" = "1" ]; then
+						echo "Успех! Завершаем работу."
+						echo
+						exit 0
+					fi
+				fi
+			;;
+	esac
 done
 
 exit 0
