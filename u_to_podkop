@@ -1,4 +1,5 @@
 #!/bin/sh
+# Ютуб в подкоп
 
 clear
 echo "v0.2"
@@ -58,9 +59,9 @@ echo "Готово! Добавлено в секцию: $target_section"
 
 service podkop start && service podkop enable
 
-ifup awg10
-
 sleep 7
+
+ifup awg10
 
 echo
 
