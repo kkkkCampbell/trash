@@ -58,9 +58,9 @@ echo "Готово! Добавлено в секцию: $target_section"
 
 service podkop start && service podkop enable
 
-sleep 7
-
 ifup awg10
+
+sleep 7
 
 echo
 
