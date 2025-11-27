@@ -6,6 +6,7 @@ echo "Создаём архивную копию конфигурации в ф�
 # echo "====="
 [ -f /tempbackup.tar.gz ] && echo "Архив /tempbackup.tar.gz уже существует" || \
 { sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
+sleep1
 echo
 
 clear
@@ -35,7 +36,7 @@ else
 	fi
 fi
 
-sleep 5
+sleep 4
 
 # Проверяем наличие в системе необходимых для работы пакетов
 TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock"
