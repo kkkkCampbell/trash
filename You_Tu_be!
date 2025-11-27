@@ -6,8 +6,6 @@ echo "Создаём архивную копию конфигурации в ф�
 # echo "====="
 [ -f /tempbackup.tar.gz ] && echo "Архив /tempbackup.tar.gz уже существует" || \
 { sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
-sleep1
-echo
 
 clear
 echo "Селектор стратегий для youtubeUnblock v0.2"
@@ -36,7 +34,7 @@ else
 	fi
 fi
 
-sleep 4
+sleep 5
 
 # Проверяем наличие в системе необходимых для работы пакетов
 TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock"
@@ -73,8 +71,9 @@ main() {
 			sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"
 		fi
 	fi
+	
 	# Удаляем секцию YouTube из ЮАБ
-
+	u_section_delete
 	sleep 1
 
 	# Создаём новую секцию YouTube
