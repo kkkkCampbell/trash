@@ -1,6 +1,13 @@
 #!/bin/sh
 # Селектор стратегий для youtubeUnblock 
 
+# Бэкапим конфигу
+echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
+# echo "====="
+[ -f /tempbackup.tar.gz ] && echo "Архив /tempbackup.tar.gz уже существует" || \
+{ sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
+echo
+
 clear
 echo "Селектор стратегий для youtubeUnblock v0.2"
 
@@ -50,12 +57,6 @@ for pkg in $TARGET_PKGS; do
 done
 
 main() {
-	# Бэкапим конфигу
-	echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
-	# echo "====="
-	[ -f /tempbackup.tar.gz ] && echo "Архив /tempbackup.tar.gz уже существует" || \
-	{ sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
-	echo
 	
 	# Останавливаем сервисы
     service zapret stop >/dev/null 2>&1
