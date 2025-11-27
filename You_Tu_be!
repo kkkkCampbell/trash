@@ -30,8 +30,9 @@ fi
 
 sleep 5
 
-# Проверяем наличия в системе необходимых для работы пакетов
-TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
+# Проверяем наличие в системе необходимых для работы пакетов
+TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock"
+# zapret luci-app-zapret"
 
 for pkg in $TARGET_PKGS; do
 	# opkg list-installed выводит "имя - версия"
@@ -41,7 +42,8 @@ for pkg in $TARGET_PKGS; do
 		echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
 		echo "====="
 		opkg update
-		opkg install youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret
+		opkg install youtubeUnblock luci-app-youtubeUnblock
+ 		#zapret luci-app-zapret
 		sleep 1
 		break
 	fi
@@ -520,7 +522,8 @@ echo " 0 - Выход
 "
 
 
-	printf "Введите номер выбранной стратегии > "
+	echo "Введите номер выбранной стратегии"
+	printf "> "
 	read idx
 	echo
 
