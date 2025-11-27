@@ -1,4 +1,5 @@
 #!/bin/sh
+. /etc/openwrt_release
 
 clear
 echo ncheck_0.3
@@ -111,7 +112,7 @@ fi
 
 clear
 
-echo "INSTALLED"
+echo "INSTALLED ${DISTRIB_DESCRIPTION}"
 echo ==========
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall|nfqws"
 echo
@@ -144,7 +145,6 @@ if [ "$novpn" -eq 0 ]; then
 fi
 printf "${green}OPERA-PROXY [ ${test_site} ]: ${reset}"  && curl -m 10 -s -x $opera_proxy $test_site | head -c 12 && echo
 printf "${green}VLESS       [ ${test_site} ]: ${reset}"  && sing-box tools fetch $test_site -D /etc/sing-box | head -c 15 && echo
-echo
 
 echo "YOUTUBE"
 echo ========
