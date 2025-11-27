@@ -112,8 +112,9 @@ fi
 
 clear
 
-echo "INSTALLED ${DISTRIB_DESCRIPTION}"
+echo "INSTALLED"
 echo ==========
+echo ${DISTRIB_DESCRIPTION}
 opkg list-installed | grep -i -E "podkop|unblock|zapret|ruantiblock|clash|passwall|nfqws"
 echo
 
@@ -165,7 +166,7 @@ printf "${green}OPERA-PROXY-COUNTRY: ${reset}%s\n" "$(${geocheck_proxy}${opera_p
 if [ "$novpn" -eq 0 ]; then
 	printf "${green}VPN-COUNTRY:        ${reset} %s\n" "$(${geocheck_vpn}${vpn_iface} | grep -i -E "country|message")"
 fi
-printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"; echo
+printf "${green}VLESS-COUNTRY: ${reset}      %s\n" "$(${geocheck_vless}/${vless_ip} | grep -i -E 'country|message')"
 
 if [ "$novpn" -eq 0 ]; then
 	printf "${green}VPN-INTERFACE-NAME: ${reset}   "
