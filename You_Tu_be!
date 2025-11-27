@@ -337,7 +337,7 @@ URLS="	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubefanfest.com'
 	list sni_domains 'youtubegaming.com'
 	list sni_domains 'youtubekids.com'
-	list sni_domains 'youtubemobilesupport.com'
+	list sni_domains 'youtubemobilesupport.com'"
 
 echo
 echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
