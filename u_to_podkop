@@ -40,7 +40,7 @@ echo
 # Останавливаем сервисы
 echo "Останавливаем сервисы podkop youtubeUnblock zapret"
 SERVICES_STOP="podkop youtubeUnblock zapret"
-SERVICES_START="podkop youtubeUnblock"
+SERVICES_START="podkop youtubeUnblock opera-proxy dnsmasq"
 for service in $SERVICES_STOP; do
   service $service stop >/dev/null 2>&1
   service $service disable >/dev/null 2>&1
@@ -99,10 +99,11 @@ fi
 
 
 echo "Перезапускаем сервисы"
-# service sing-box start >/dev/null 2>&1
-service opera-proxy restart >/dev/null 2>&1; echo "  opera-proxy"
-service podkop restart >/dev/null 2>&1; service podkop enable >/dev/null 2>&1; echo "  podkop"
-service dnsmasq restart >/dev/null 2>&1; echo "  dnsmasq"
+
+for service in $SERVICES_START; do
+  service $service restart >/dev/null 2>&1; echo "  $service"
+  service $service enable >/dev/null 2>&1
+done
 echo
 echo "Добавлено в секцию: $target_section"
 echo "Проверяйте доступ к Ютуб"
@@ -114,3 +115,5 @@ echo
 # reboot
 
 exit 0
+# Ютуб в подкоп
+# u_to_podkop
