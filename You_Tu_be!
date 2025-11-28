@@ -1,6 +1,5 @@
 #!/bin/sh
 # Селектор стратегий для youtubeUnblock 
-# You_Tu_be!
 
 # Бэкапим конфигу
 echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
@@ -67,10 +66,11 @@ main() {
 	done
 	sleep 1
 
-	# Удаляем все list community_lists 'youtube' из подкопа
+	# # Удаляем все list community_lists 'youtube' и option community_lists 'youtube'
 	if [ -n "$PODKOP_VERSION" ]; then 
 		if [ -f "/etc/config/podkop" ]; then 
-			sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"
+			sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
+			sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
 		fi
 	fi
 	
