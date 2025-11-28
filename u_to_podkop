@@ -40,7 +40,7 @@ echo
 # Останавливаем сервисы
 echo "Останавливаем сервисы podkop youtubeUnblock zapret"
 SERVICES_STOP="podkop youtubeUnblock zapret"
-SERVICES_START="opera-proxy dnsmasq odhcpd youtubeUnblock podkop"
+SERVICES_START="opera-proxy dnsmasq odhcpd podkop" # youtubeUnblock
 
 for service in $SERVICES_STOP; do
   service $service stop >/dev/null 2>&1
