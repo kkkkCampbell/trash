@@ -27,7 +27,6 @@ if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; th
 else
 	echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) устарела\033[0m"
 	echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
-	exit 1		
 fi
 
 # Проверяем существование файла конфигурации подкопа
