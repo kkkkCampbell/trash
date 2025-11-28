@@ -81,8 +81,8 @@ if [ -n target_section ]; then
 	sed -i "s/option community_lists 'youtube'/list community_lists 'youtube'/g" "$CONFIG_FILE"
 	uci commit
 	# Перезапускаем сеть
-	service dnsmasq restart
-	#service network restart
+	# service dnsmasq restart
+	# service network restart
 fi
 
 
@@ -97,14 +97,17 @@ fi
   # exit 1
 # fi
 
-echo "Готово! Добавлено в секцию: $target_section"
-echo
 
+echo "Перезапускаем сервисы"
 # service sing-box start >/dev/null 2>&1
-service podkop restart >/dev/null 2>&1
-service podkop enable >/dev/null 2>&1
-
+service opera-proxy restart >/dev/null 2>&1; echo "  opera-proxy"
+service podkop restart >/dev/null 2>&1; service podkop enable >/dev/null 2>&1; echo "  podkop"
+service dnsmasq restart >/dev/null 2>&1; echo "  dnsmasq"
 echo
+echo "Добавлено в секцию: $target_section"
+echo "Проверяйте доступ к Ютуб"
+echo
+
 
 # echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
 # sleep 10
