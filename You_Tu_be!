@@ -1,5 +1,6 @@
 #!/bin/sh
 # Селектор стратегий для youtubeUnblock 
+# You_Tu_be!
 
 # Бэкапим конфигу
 echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
@@ -14,7 +15,6 @@ echo "Селектор стратегий для youtubeUnblock v0.2.1"
 PACKAGE="podkop"
 PODKOP_VERSION=0
 CONFIG_FILE="/etc/config/podkop"
-
 # Получаем версию установленного пакета (будет пустой строкой если не установлен)
 PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
 # Выделяем мажорную версию
@@ -61,6 +61,7 @@ SERVICES_START="podkop youtubeUnblock"
 main() {
 
 	# Останавливаем сервисы
+	echo "Останавливаем сервисы"
 	for service in $SERVICES_STOP; do
 	  service $service stop >/dev/null 2>&1
 	  service $service disable >/dev/null 2>&1
@@ -76,6 +77,7 @@ main() {
 	fi
 	
 	# Удаляем секцию YouTube из ЮАБ
+	echo "Ищем секцию YouTube в youtubeUnblock"
 	u_section_delete
 	sleep 1
 
@@ -99,10 +101,12 @@ main() {
 	esac
 	
 	# Запускаем сервисы
+	echo "Запускаем сервисы"
 	for service in $SERVICES_START; do
 	  service $service start >/dev/null 2>&1
 	  service $service enable >/dev/null 2>&1
 	done
+	service dnsmasq restart >/dev/null 2>&1
 }
 
 u_section_delete() {
@@ -399,8 +403,6 @@ echo " 0 - Выход
 				if echo "$idx" | grep -qE '^[0-9]$'; then
 					eval "SELECTED_STRATEGY=\$STRATEGY_$idx"
 					main
-
-					sleep 5
 
 					echo
 
