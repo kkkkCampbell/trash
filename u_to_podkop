@@ -30,6 +30,16 @@ else
 	exit 1		
 fi
 
+SERVICES_STOP="podkop youtubeUnblock zapret"
+SERVICES_START="podkop youtubeUnblock"
+
+# echo "$PODKOP_VERSION"
+for service in $SERVICES_STOP; do
+  service $service stop >/dev/null 2>&1
+  service $service disable >/dev/null 2>&1
+done
+sleep 1
+
 echo
 echo "Добавляем Ютуб в подкоп"
 
@@ -40,8 +50,6 @@ if [ ! -f "$CONFIG_FILE" ]; then
     echo "Ошибка: Файл $CONFIG_FILE не существует"
     exit 1
 fi
-
-service podkop stop >/dev/null 2>&1
 
 # Создаем backup
 # cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
@@ -70,6 +78,8 @@ sed -i "/^${target_section}/a\\\tlist community_lists 'youtube'" "$CONFIG_FILE"
 # Проверяем добавление нового параметра в $CONFIG_FILE
 if ! grep -q "list community_lists 'youtube'" /etc/config/podkop; then
   echo "Не удалось добавить параметр, прекращаю работу"
+  service podkop restart >/dev/null 2>&1
+  service podkop enable >/dev/null 2>&1
   exit 1
 fi
 
