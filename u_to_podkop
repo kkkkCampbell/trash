@@ -54,8 +54,8 @@ echo "Добавляем Ютуб в подкоп"
 # echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 
 # Удаляем все list community_lists 'youtube' и option community_lists 'youtube'
-#sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
-#sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
+sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
+sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
 
 # Подсчитываем количество секций config
 count=$(grep -c '^config section' "$CONFIG_FILE")
