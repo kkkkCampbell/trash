@@ -27,7 +27,7 @@ else
 		PODKOP_VERSION=""
     else
         echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна\033[0m"
-        echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.6 или v0.7\033[0m"
+        echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
 		PODKOP_VERSION=""
     fi
 fi
