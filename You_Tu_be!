@@ -26,11 +26,13 @@ else
     if [ -z "$PODKOP_VERSION" ]; then
         echo -e "\033[33mPodkop не установлен, часть функций недоступна\033[0m"
 		PODKOP_VERSION=""
+		sleep 3
     else
         echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна\033[0m"
         echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
 		echo -e "\033[33mЧасть функций недоступна.\033[0m"
 		PODKOP_VERSION=""
+		sleep 5
     fi
 fi
 
