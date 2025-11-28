@@ -54,8 +54,8 @@ echo "Добавляем Ютуб в подкоп"
 # echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 
 # Удаляем все list community_lists 'youtube' и option community_lists 'youtube'
-sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
-sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
+#sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
+#sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
 
 # Подсчитываем количество секций config
 count=$(grep -c '^config section' "$CONFIG_FILE")
@@ -74,7 +74,7 @@ section_name=""
 section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
 if [ -n target_section ]; then
 	# uci set podkop.${section_name}.community_lists_enabled='1'
-	uci set podkop.${section_name}.community_lists='youtube'
+	uci add_list podkop.${section_name}.community_lists='youtube'
 	uci commit podkop
 	sleep 1
 	# заменяем внесённую uci строку на верную
