@@ -3,8 +3,6 @@
 
 clear
 echo "v0.2"
-sleep 3
-clear
 
 # Проверяем наличие подкопа в системе и его версию
 PACKAGE="podkop"
@@ -29,6 +27,8 @@ else
 	echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.6 или v0.7\033[0m"
 	exit 1		
 fi
+sleep 3
+clear
 
 CONFIG_FILE="/etc/config/podkop"
 # Проверяем существование файла
@@ -59,28 +59,33 @@ sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/de
 
 # Подсчитываем количество секций config
 count=$(grep -c '^config' "$CONFIG_FILE")
-
+section_name=""
 # Получаем имя секции и активируем листы  сообщества
 if [ $count -gt 1 ]; then
 		 target_section=$(grep '^config' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
-		 awk 'NR==2,/option community_lists_enabled/ { if ($0~/option community_lists_enabled/) $0="	option community_lists_enabled '\''1'\''"; print }' "$CONFIG_FILE"  > temp && mv temp "$CONFIG_FILE" 
+		 section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
 	elif [ $count -eq 1 ]; then
 	     target_section=$(grep '^config' "$CONFIG_FILE")
-		 awk '/option community_lists_enabled/ { $0="	option community_lists_enabled '\''1'\''" }1' "$CONFIG_FILE"  > temp && mv temp "$CONFIG_FILE" 
+		 section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
 	else
 	     echo "Секций в "${CONFIG_FILE}" не найдено"
 fi
 
+if [ -n target_section ]; then
+	uci set podkop.${section_name}.community_lists_enabled='1'
+	uci set podkop.${section_name}.community_lists='youtube'
+	uci commit
+fi
 # Заменяем строку с секцией на саму себя + list community_lists 'youtube'
 sed -i "/^${target_section}/a\\\tlist community_lists 'youtube'" "$CONFIG_FILE"
 
 # Проверяем добавление нового параметра в $CONFIG_FILE
-if ! grep -q "list community_lists 'youtube'" /etc/config/podkop; then
-  echo "Не удалось добавить параметр, прекращаю работу"
-  service podkop restart >/dev/null 2>&1
-  service podkop enable >/dev/null 2>&1
-  exit 1
-fi
+# if ! grep -q "list community_lists 'youtube'" /etc/config/podkop; then
+  # echo "Не удалось добавить параметр, прекращаю работу"
+  # service podkop restart >/dev/null 2>&1
+  # service podkop enable >/dev/null 2>&1
+  # exit 1
+# fi
 
 echo "Готово! Добавлено в секцию: $target_section"
 echo
@@ -88,8 +93,6 @@ echo
 service podkop restart >/dev/null 2>&1
 service podkop enable >/dev/null 2>&1
 echo
-
-exit 0
 
 echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
 sleep 10
