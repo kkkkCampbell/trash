@@ -60,6 +60,7 @@ sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/de
 # Подсчитываем количество секций config
 count=$(grep -c '^config section' "$CONFIG_FILE")
 section_name=""
+echo $count
 
 # Получаем имя секции и активируем листы  сообщества
 if [ "$count" -gt 1 ]; then
