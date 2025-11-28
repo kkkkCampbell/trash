@@ -104,12 +104,13 @@ main() {
 	esac
 	
 	# Запускаем сервисы
+	service dnsmasq restart >/dev/null 2>&1
 	echo "Запускаем сервисы"
 	for service in $SERVICES_START; do
 	  service $service start >/dev/null 2>&1
 	  service $service enable >/dev/null 2>&1
 	done
-	service dnsmasq restart >/dev/null 2>&1
+
 }
 
 u_section_delete() {
