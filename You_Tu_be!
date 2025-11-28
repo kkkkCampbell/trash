@@ -10,28 +10,26 @@ echo "Создаём архивную копию конфигурации в ф�
 clear
 echo "Селектор стратегий для youtubeUnblock v0.2.1"
 
-# Проверяем наличие в системе подкопа
+# Проверяем версию подкопа
 PACKAGE="podkop"
-REQUIRED_VERSION="v0.7"
-PODKOP_NI=0
-# Получаем информацию об установленном пакете
-INSTALLED_INFO=$(opkg list-installed | grep "^$PACKAGE ")
-if [ -z "$INSTALLED_INFO" ]; then 
-	PODKOP_NI=1 
-	echo
-	echo -e "\033[33mPodkop не установлен, часть функций недоступна\033[0m"
+PODKOP_VERSION=0
+
+# Получаем версию установленного пакета (будет пустой строкой если не установлен)
+PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
+# Выделяем мажорную версию
+PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
+
+if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
+    echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
 else
-	# Извлекаем версию подкопа
-	VERSION=$(echo "$INSTALLED_INFO" | awk '{print $3}')
-	# Проверяем, содержит ли версия требуемую подстроку
-	if echo "$VERSION" | grep -q "$REQUIRED_VERSION"; then
-		echo -e "\033[32mВерсия пакета $PACKAGE: $VERSION\033[0m"
-	else
-		echo -e "\033[33mУстановленная версия пакета $PACKAGE не актуальна\033[0m"
-		echo -e "\033[33mРекомендуется обновить $PACKAGE до последней версии\033[0m"
-		echo -e "\033[33mЧасть функций недоступна\033[0m"
-		PODKOP_NI=1
-	fi
+    if [ -z "$PODKOP_VERSION" ]; then
+        echo -e "\033[33mPodkop не установлен, часть функций недоступна\033[0m"
+		PODKOP_VERSION=""
+    else
+        echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна\033[0m"
+        echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.6 или v0.7\033[0m"
+		PODKOP_VERSION=""
+    fi
 fi
 
 sleep 5
@@ -45,7 +43,8 @@ for pkg in $TARGET_PKGS; do
 	# grep ищет строку, начинающуюся (^) с имени пакета
 	if ! opkg list-installed "$pkg" | grep -q "^$pkg"; then
 		# Устанавливаем вебфейс анблока итп.
-		echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock zapret luci-app-zapret"
+		echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock"
+		#zapret luci-app-zapret"
 		echo "====="
 		opkg update
 		opkg install youtubeUnblock luci-app-youtubeUnblock
@@ -55,18 +54,20 @@ for pkg in $TARGET_PKGS; do
 	fi
 done
 
+SERVICES_STOP="podkop youtubeUnblock zapret"
+SERVICES_START="podkop youtubeUnblock"
+
 main() {
-	
+
 	# Останавливаем сервисы
-    service zapret stop >/dev/null 2>&1
-	service zapret disable >/dev/null 2>&1
-	service youtubeUnblock stop >/dev/null 2>&1
-	service youtubeUnblock disable >/dev/null 2>&1
-	service podkop stop >/dev/null 2>&1
-	sleep 1	
+	for service in $SERVICES_STOP; do
+	  service $service stop >/dev/null 2>&1
+	  service $service disable >/dev/null 2>&1
+	done
+	sleep 1
 
 	# Удаляем все list community_lists 'youtube' из подкопа
-	if [ "$PODKOP_NI" -ne 1 ]; then 
+	if [ -n "$PODKOP_VERSION" ]; then 
 		if [ -f "/etc/config/podkop" ]; then 
 			sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "/etc/config/podkop"
 		fi
@@ -95,10 +96,11 @@ main() {
 		;;
 	esac
 	
-	service podkop start >/dev/null 2>&1
-	service podkop enable >/dev/null 2>&1
-	service youtubeUnblock enable >/dev/null 2>&1
-	service youtubeUnblock start >/dev/null 2>&1
+	# Запускаем сервисы
+	for service in $SERVICES_START; do
+	  service $service start >/dev/null 2>&1
+	  service $service enable >/dev/null 2>&1
+	done
 }
 
 u_section_delete() {
@@ -362,7 +364,7 @@ echo "
  7 - Стратегия tcp_check_1
  8 - Стратегия tcp_check_2
  "
-if [ "$PODKOP_NI" -ne 1 ]; then echo " 9 - Ничего не помогло. Хочу ютуб через podkop!"; fi
+if [ -n "$PODKOP_VERSION" ]; then echo " 9 - Ничего не помогло. Хочу ютуб через podkop!"; fi
 echo " 0 - Выход
 "
 
@@ -383,18 +385,13 @@ echo " 0 - Выход
 #			# Проверка на "не число" или пустоту
 #			echo "Ошибка: введите номер стратегии"; exit 1 
 #			;;
-		 9)  	
-			 if [ "$PODKOP_NI" -ne 1 ]; then
-			 	 service zapret stop >/dev/null 2>&1
-				 service zapret disable >/dev/null 2>&1
-				 service youtubeUnblock stop >/dev/null 2>&1
-				 service youtubeUnblock disable >/dev/null 2>&1
-				 sleep 1
-				 u_section_delete
-				 sh <(wget -qO- https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop)
-				 exit 0
+		 9)			
+			if [ -n "$PODKOP_VERSION" ]; then
+				u_section_delete
+				sh <(wget -qO- "https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/uttoobe/u_to_podkop")
+				exit 0
 			 fi
-		;;
+			;;
 		*) 
 			# Все остальные варианты (числа 1, 2, 3...9)
 				if echo "$idx" | grep -qE '^[0-9]$'; then
