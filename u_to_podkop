@@ -2,7 +2,7 @@
 # Ютуб в подкоп
 
 clear
-echo "v0.2"
+echo "v0.1.1"
 sleep 3
 clear
 
@@ -50,15 +50,18 @@ service podkop stop >/dev/null 2>&1
 # Удаляем все list community_lists 'youtube'
 sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/dev/null 2>&1
 
-# Находим все секции
+# Подсчитываем количество секций config
 count=$(grep -c '^config' "$CONFIG_FILE")
-# Получаем имя секции
+
+# Получаем имя секции и активируем листы  сообщества
 if [ $count -gt 1 ]; then
-  target_section=$(grep '^config' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
-elif [ $count -eq 1 ]; then
-  target_section=$(grep '^config' "$CONFIG_FILE")
-else
-  echo "Секций в "${CONFIG_FILE}" не найдено"
+		 target_section=$(grep '^config' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
+		 awk 'NR==2,/option community_lists_enabled/ { if ($0~/option community_lists_enabled/) $0="	option community_lists_enabled '\''1'\''"; print }' "$CONFIG_FILE"  > temp && mv temp "$CONFIG_FILE" 
+	elif [ $count -eq 1 ]; then
+	     target_section=$(grep '^config' "$CONFIG_FILE")
+		 awk '/option community_lists_enabled/ { $0="	option community_lists_enabled '\''1'\''" }1' "$CONFIG_FILE"  > temp && mv temp "$CONFIG_FILE" 
+	else
+	     echo "Секций в "${CONFIG_FILE}" не найдено"
 fi
 
 # Заменяем строку с секцией на саму себя + list community_lists 'youtube'
@@ -75,8 +78,9 @@ echo
 
 service podkop restart >/dev/null 2>&1
 service podkop enable >/dev/null 2>&1
-target_section=
 echo
+
+exit 0
 
 echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
 sleep 10
