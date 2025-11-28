@@ -13,6 +13,7 @@ echo "Селектор стратегий для youtubeUnblock v0.2.1"
 # Проверяем версию подкопа
 PACKAGE="podkop"
 PODKOP_VERSION=0
+CONFIG_FILE="/etc/config/podkop"
 
 # Получаем версию установленного пакета (будет пустой строкой если не установлен)
 PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
