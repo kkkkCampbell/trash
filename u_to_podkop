@@ -30,6 +30,13 @@ else
 	exit 1		
 fi
 
+CONFIG_FILE="/etc/config/podkop"
+# Проверяем существование файла
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Ошибка: Файл $CONFIG_FILE не существует"
+    exit 1
+fi
+
 SERVICES_STOP="podkop youtubeUnblock zapret"
 SERVICES_START="podkop youtubeUnblock"
 
@@ -42,14 +49,6 @@ sleep 1
 
 echo
 echo "Добавляем Ютуб в подкоп"
-
-CONFIG_FILE="/etc/config/podkop"
-
-# Проверяем существование файла
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Ошибка: Файл $CONFIG_FILE не существует"
-    exit 1
-fi
 
 # Создаем backup
 # cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
