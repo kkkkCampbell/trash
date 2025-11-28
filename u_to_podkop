@@ -55,17 +55,19 @@ echo "Добавляем Ютуб в подкоп"
 # echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 
 # Удаляем все list community_lists 'youtube'
-sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/dev/null 2>&1
+#sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/dev/null 2>&1
+sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
 
 # Подсчитываем количество секций config
-count=$(grep -c '^config' "$CONFIG_FILE")
-section_name=""
+count=$(grep -c '^config section' "$CONFIG_FILE")
+
 # Получаем имя секции и активируем листы  сообщества
-if [ $count -gt 1 ]; then
-		 target_section=$(grep '^config' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
+section_name=""
+if [ "$count" -gt 1 ]; then
+		 target_section=$(grep '^config section' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
 		 section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
-	elif [ $count -eq 1 ]; then
-	     target_section=$(grep '^config' "$CONFIG_FILE")
+	elif [ "$count" -eq 1 ]; then
+	     target_section=$(grep '^config section' "$CONFIG_FILE")
 		 section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
 	else
 	     echo "Секций в "${CONFIG_FILE}" не найдено"
@@ -74,7 +76,8 @@ fi
 if [ -n target_section ]; then
 	uci set podkop.${section_name}.community_lists_enabled='1'
 	uci set podkop.${section_name}.community_lists='youtube'
-	uci commit
+	uci commit podkop
+	#uci apply
 fi
 # Заменяем строку с секцией на саму себя + list community_lists 'youtube'
 sed -i "/^${target_section}/a\\\tlist community_lists 'youtube'" "$CONFIG_FILE"
