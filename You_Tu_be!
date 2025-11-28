@@ -32,7 +32,7 @@ else
         echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
 		echo -e "\033[33mЧасть функций недоступна.\033[0m"
 		PODKOP_VERSION=""
-		sleep 5
+		sleep 8
     fi
 fi
 
