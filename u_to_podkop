@@ -2,21 +2,36 @@
 # Ютуб в подкоп
 
 clear
-echo "v0.1"
+echo "v0.2"
 sleep 3
 clear
 
-# Проверяем наличие подкопа в системе
-if ! opkg list-installed | grep -q '^podkop'; then
-	echo; echo "Podkop не установлен! Завершаю работу."; echo
-	echo "УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845"
-	echo
+# Проверяем наличие подкопа в системе и его версию
+PACKAGE="podkop"
+PODKOP_VERSION=0
+
+# Получаем версию установленного пакета (пусто если не установлен)
+PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
+# Выделяем мажорную версию
+PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
+
+if [ -z "$PODKOP_VERSION" ]; then
+	echo -e "\033[33m
+	PODKOP НЕ УСТАНОВЛЕН!
+	УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845\033[0m"
 	exit 1
+fi
+
+if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
+    echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
+else
+	echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна\033[0m"
+	echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.6 или v0.7\033[0m"
+	exit 1		
 fi
 
 echo
 echo "Добавляем Ютуб в подкоп"
-echo
 
 CONFIG_FILE="/etc/config/podkop"
 
@@ -29,39 +44,38 @@ fi
 service podkop stop >/dev/null 2>&1
 
 # Создаем backup
-cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
-echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+# cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+# echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
 
 # Удаляем все list community_lists 'youtube'
 sed -i '/[[:space:]]*list community_lists '\''youtube'\''/d' "$CONFIG_FILE" >/dev/null 2>&1
 
 # Находим все секции
-sections=$(grep "^config section '" "$CONFIG_FILE")
-
-# Проверяем количество секций
-section_count=$(echo "$sections" | wc -l)
-
-if [ "$section_count" -ge 2 ]; then
-    # Если есть вторая секция, используем её
-    target_section=$(echo "$sections" | sed -n '2p')
-    echo "Найдена вторая секция: $target_section"
+count=$(grep -c '^config' "$CONFIG_FILE")
+# Получаем имя секции
+if [ $count -gt 1 ]; then
+  target_section=$(grep '^config' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
+elif [ $count -eq 1 ]; then
+  target_section=$(grep '^config' "$CONFIG_FILE")
 else
-    # Если второй секции нет, используем первую
-    target_section=$(echo "$sections" | sed -n '1p')
-    echo "Вторая секция не найдена, используем первую: $target_section"
+  echo "Секций в "${CONFIG_FILE}" не найдено"
 fi
 
-# Извлекаем имя секции (часть в кавычках)
-section_name=$(echo "$target_section" | sed -n "s/^config section '\([^']*\)'.*$/\1/p")
-
 # Заменяем строку с секцией на саму себя + list community_lists 'youtube'
-sed -i "s/^config section '${section_name}'/&\\n\\tlist community_lists 'youtube'/" "$CONFIG_FILE"
+sed -i "/^${target_section}/a\\\tlist community_lists 'youtube'" "$CONFIG_FILE"
+
+# Проверяем добавление нового параметра в $CONFIG_FILE
+if ! grep -q "list community_lists 'youtube'" /etc/config/podkop; then
+  echo "Не удалось добавить параметр, прекращаю работу"
+  exit 1
+fi
 
 echo "Готово! Добавлено в секцию: $target_section"
+echo
 
 service podkop restart >/dev/null 2>&1
 service podkop enable >/dev/null 2>&1
-
+target_section=
 echo
 
 echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
