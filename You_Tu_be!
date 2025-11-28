@@ -19,7 +19,7 @@ PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
 # Выделяем мажорную версию
 PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
 
-if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
+if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; then
     echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
 else
     if [ -z "$PODKOP_VERSION" ]; then
