@@ -9,7 +9,7 @@ echo "Создаём архивную копию конфигурации в ф�
 { sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
 
 clear
-echo "Селектор стратегий для youtubeUnblock v0.2.1"
+echo "Селектор стратегий для youtubeUnblock v0.2.2"
 
 # Проверяем версию подкопа
 PACKAGE="podkop"
@@ -328,7 +328,8 @@ STRATEGY_8="config section
 	option udp_stun_filter '0'"
 	
 
-URLS="	list sni_domains 'googlevideo.com'
+URLS="	list sni_domains 'm.youtube.com'
+	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubei.googleapis.com'
 	list sni_domains 'ytimg.com'
 	list sni_domains 'yt3.ggpht.com'
@@ -350,7 +351,9 @@ URLS="	list sni_domains 'googlevideo.com'
 	list sni_domains 'youtubegaming.com'
 	list sni_domains 'youtubekids.com'
 	list sni_domains 'youtubemobilesupport.com'
-	list sni_domains 'i.ytimg.com'"
+	list sni_domains 'i.ytimg.com'
+	list sni_domains 'fonts.gstatic.com'
+	list sni_domains 'static.doubleclick.net'"
 
 echo
 echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
