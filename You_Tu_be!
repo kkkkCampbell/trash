@@ -9,7 +9,7 @@ echo "Создаём архивную копию конфигурации в ф�
 { sysupgrade -b /tempbackup.tar.gz && echo "Архив /tempbackup.tar.gz создан"; }
 
 clear
-echo "Селектор стратегий для youtubeUnblock v0.2.2"
+echo "Селектор стратегий для youtubeUnblock v0.2.3"
 
 # Проверяем версию подкопа
 PACKAGE="podkop"
@@ -328,32 +328,34 @@ STRATEGY_8="config section
 	option udp_stun_filter '0'"
 	
 
-URLS="	list sni_domains 'm.youtube.com'
-	list sni_domains 'googlevideo.com'
+URLS="	list sni_domains 'fonts.gstatic.com'
+	list sni_domains 'i.ytimg.com'
+	list sni_domains 'jnn-pa.googleapis.com'
+	list sni_domains 'm.youtube.com'
+	list sni_domains 'redirector.googlevideo.com'
+	list sni_domains 'static.doubleclick.net'
+	list sni_domains 'suggestqueries.google.com'
+	list sni_domains 'wide-youtube.l.google.com'
+	list sni_domains 'youtube.googleapis.com'
+	list sni_domains 'youtubeembeddedplayer.googleapis.com'
 	list sni_domains 'youtubei.googleapis.com'
-	list sni_domains 'ytimg.com'
+	list sni_domains 'youtube-ui.l.google.com'
 	list sni_domains 'yt3.ggpht.com'
 	list sni_domains 'yt4.ggpht.com'
-	list sni_domains 'youtube.com'
-	list sni_domains 'youtubeembeddedplayer.googleapis.com'
 	list sni_domains 'ytimg.l.google.com'
-	list sni_domains 'jnn-pa.googleapis.com'
-	list sni_domains 'youtube-nocookie.com'
-	list sni_domains 'youtube-ui.l.google.com'
 	list sni_domains 'yt-video-upload.l.google.com'
-	list sni_domains 'wide-youtube.l.google.com'
 	list sni_domains 'youtu.be'
-	list sni_domains 'youtube.googleapis.com'
-	list sni_domains 'yt.be'
 	list sni_domains 'withyoutube.com'
+	list sni_domains 'youtube.com'
 	list sni_domains 'youtubeeducation.com'
 	list sni_domains 'youtubefanfest.com'
 	list sni_domains 'youtubegaming.com'
 	list sni_domains 'youtubekids.com'
 	list sni_domains 'youtubemobilesupport.com'
-	list sni_domains 'i.ytimg.com'
-	list sni_domains 'fonts.gstatic.com'
-	list sni_domains 'static.doubleclick.net'"
+	list sni_domains 'youtube-nocookie.com'
+	list sni_domains 'yt.be'
+	list sni_domains 'ytimg.com'
+	list sni_domains 'googlevideo.com'"
 
 echo
 echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
