@@ -2,6 +2,18 @@
 # Селектор стратегий для youtubeUnblock 
 # You_Tu_be!
 
+# Цвета текста
+RED='\033[0;31m'       # Красный
+GREEN='\033[0;32m'     # Зеленый
+YELLOW='\033[0;33m'    # Желтый
+BLUE='\033[0;34m'      # Синий
+MAGENTA='\033[0;35m'   # Magenta
+CYAN='\033[0;36m'      # Циан
+WHITE='\033[0;37m'     # Белый
+
+# Сброс цвета
+RESET='\033[0m'
+
 # Бэкапим конфигу
 echo "Создаём архивную копию конфигурации в файле /tempbackup.tar.gz"
 # echo "====="
@@ -14,7 +26,8 @@ echo "Селектор стратегий для youtubeUnblock v0.2.3"
 # Проверяем версию подкопа
 PACKAGE="podkop"
 PODKOP_VERSION=0
-CONFIG_FILE="/etc/config/podkop"
+CONFIG_FILE=$(opkg info podkop | grep Conffiles -A1 | tail -n1 | awk '{print $1}')
+
 # Получаем версию установленного пакета (будет пустой строкой если не установлен)
 PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
 # Выделяем мажорную версию
@@ -357,9 +370,6 @@ URLS="	list sni_domains 'fonts.gstatic.com'
 	list sni_domains 'ytimg.com'
 	list sni_domains 'googlevideo.com'"
 
-echo
-echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
-echo
 
 while true; do
 
@@ -416,9 +426,8 @@ echo " 0 - Выход
 
 					echo
 
-					echo "ПРОВЕРЯЙТЕ ДОСТУП К ЮТУБ"
-					echo -e "\033[33mСМЕНИВ СТРАТЕГИЮ КАЖДЫЙ РАЗ ЗАПУСКАЙТЕ НОВЫЙ ВИДЕОРОЛИК ДЛЯ ПРОВЕРКИ\033[0m"
-					echo -e "\033[33mВ НЕКОТОРЫХ СЛУЧАЯХ ТРЕБУЕТСЯ ПЕРЕЗАПУСК ЮТУБ-СМОТРЕЛКИ\033[0m"
+echo -e "${GREEN}!!!_ЗАКРОЙТЕ БРАУЗЕР_!!!
+Откройте его вновь и ТОЛЬКО ТЕПЕРЬ проверяйте доступ к Ютуб.${RESET}"
 					echo
 					echo "Выбрана стратегия №" "$idx"
 					printf "ЕСЛИ СТРАТЕГИЯ СРАБОТАЛА ВВЕДИТЕ 1, ЕСЛИ НЕТ 0 > "
