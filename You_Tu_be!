@@ -25,53 +25,49 @@ echo "Селектор стратегий для youtubeUnblock v0.2.3"
 
 # Проверяем версию подкопа
 PACKAGE="podkop"
-PODKOP_VERSION=0
-CONFIG_FILE=$(opkg info podkop | grep Conffiles -A1 | tail -n1 | awk '{print $1}')
+# Получаем путь до config file (будет пустой строкой если файла нет)
+CONFIG_FILE=$(opkg info "$PACKAGE" 2>/dev/null | grep Conffiles -A1 | tail -n1 | awk '{print $1}')
+# Получаем версию установленного пакета (будет пустой строкой если $PACKAGE не установлен)
+PODKOP_VERSION=$(opkg list-installed 2>/dev/null | grep "^$PACKAGE " | awk '{print $3}' | cut -d '.' -f 1-2)
 
-# Получаем версию установленного пакета (будет пустой строкой если не установлен)
-PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
-# Выделяем мажорную версию
-PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
+# Если $PODKOP_VERSION пусто, значит подкоп не установлен
+if [ -z "$PODKOP_VERSION" ]; then
+	echo -e "${YELLOW}Podkop не установлен, часть функций недоступна${RESET}"
 
-if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; then
-    echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
+# Если $PODKOP_VERSION = v0.6|v0.7, значит подкоп установлен и версия верная
+elif 
+	echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
+    echo -e "${GREEN}Версия пакета $PACKAGE: "$PODKOP_VERSION"${RESET}"
+
+# Иначе установлена устаревшая версия
 else
-    if [ -z "$PODKOP_VERSION" ]; then
-        echo -e "\033[33mPodkop не установлен, часть функций недоступна\033[0m"
+    if [ -n "$PODKOP_VERSION" ]; then
+        echo -e "${YELLOW}Установленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна"
+        echo -e "Рекомендуется обновить $PACKAGE до версии v0.7"
+		echo -e "Часть функций недоступна.${RESET}"
+		echo
 		PODKOP_VERSION=""
-		sleep 3
-    else
-        echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) не актуальна\033[0m"
-        echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
-		echo -e "\033[33mЧасть функций недоступна.\033[0m"
-		PODKOP_VERSION=""
-		sleep 8
+		sleep 12
     fi
 fi
 
-sleep 5
+sleep 3
 
 # Проверяем наличие в системе необходимых для работы пакетов
 TARGET_PKGS="youtubeUnblock luci-app-youtubeUnblock"
-# zapret luci-app-zapret"
-
 for pkg in $TARGET_PKGS; do
 	# opkg list-installed выводит "имя - версия"
 	# grep ищет строку, начинающуюся (^) с имени пакета
 	if ! opkg list-installed "$pkg" | grep -q "^$pkg"; then
 		# Устанавливаем вебфейс анблока итп.
-		echo "Устанавливаем youtubeUnblock luci-app-youtubeUnblock"
-		#zapret luci-app-zapret"
-		echo "====="
+		echo "Устанавливаем $TARGET_PKGS"
 		opkg update
-		opkg install youtubeUnblock luci-app-youtubeUnblock
- 		#zapret luci-app-zapret
-		sleep 1
+		opkg install $TARGET_PKGS
 		break
 	fi
 done
 
-SERVICES_STOP="podkop youtubeUnblock zapret"
+SERVICES_STOP="youtubeUnblock zapret"
 SERVICES_START="podkop youtubeUnblock"
 
 main() {
@@ -92,6 +88,25 @@ main() {
 		fi
 	fi
 	
+	# ТОЛЬКО ДЛЯ ВСРАТОГО КОНФИГА 0.6 ПОДКОПА!
+	if [ "$PODKOP_VERSION" = "v0.6" ]; then
+		# Получаем секции типа 'extra'
+		SECTIONS_LIST=$(uci show podkop | grep "=extra" | cut -d '.' -f 2 | cut -d '=' -f 1)
+		# Добавляем секцию 'main'
+		SECTIONS_LIST="${SECTIONS_LIST} main"
+		for ENTRY in $SECTIONS_LIST; do
+			# Получаем значение community_lists в переменную. 
+			CURRENT_SECTION="$(uci -q get podkop."$ENTRY".community_lists)"
+			# Проверяем, является ли значение пустой строкой.
+			if [ -z "$CURRENT_SECTION" ]; then
+				# echo "Секция $ENTRY: community_lists пуст. Установка community_lists_enabled='0'"
+				uci set podkop."$ENTRY".community_lists_enabled='0'
+			fi
+		done
+		uci commit podkop
+	fi
+	
+	
 	# Удаляем секцию YouTube из ЮАБ
 	echo "Ищем секцию YouTube в youtubeUnblock"
 	u_section_delete
@@ -111,7 +126,7 @@ main() {
 			# echo "${SECTION}"
 			# Переносим секцию YouTube на первую позицию списка
 			uci reorder youtubeUnblock.${SECTION}=1
-			uci commit
+			uci commit youtubeUnblock
 			sleep 1
 		;;
 	esac
@@ -120,7 +135,7 @@ main() {
 	service dnsmasq restart >/dev/null 2>&1
 	echo "Запускаем сервисы"
 	for service in $SERVICES_START; do
-	  service $service start >/dev/null 2>&1
+	  service $service restart >/dev/null 2>&1
 	  service $service enable >/dev/null 2>&1
 	done
 
@@ -138,7 +153,7 @@ u_section_delete() {
 		echo "Удаляем секцию YouTube: $section_id"
 		uci delete youtubeUnblock.$section_id
 		sleep 1
-		uci commit
+		uci commit youtubeUnblock
 	else
 		echo "Секция YouTube не найдена"
 	fi
