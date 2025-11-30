@@ -2,119 +2,150 @@
 # Ютуб в подкоп
 # u_to_podkop
 
-clear
-echo "Ютуб в подкоп v0.2.2"
+# Цвета текста
+RED='\033[0;31m'       # Красный
+GREEN='\033[0;32m'     # Зеленый
+YELLOW='\033[0;33m'    # Желтый
+BLUE='\033[0;34m'      # Синий
+MAGENTA='\033[0;35m'   # Magenta
+CYAN='\033[0;36m'      # Циан
+WHITE='\033[0;37m'     # Белый
 
-# Проверяем наличие подкопа в системе и его версию
-PACKAGE="podkop"
-PODKOP_VERSION=""
-CONFIG_FILE="/etc/config/podkop"
+# Сброс цвета
+RESET='\033[0m'
 
-# Получаем версию установленного пакета (пусто если не установлен)
-PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
-# Выделяем мажорную версию
-PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
+main() {
 
-if [ -z "$PODKOP_VERSION" ]; then
-	echo -e "\033[33m
-	PODKOP НЕ УСТАНОВЛЕН!
-	УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845\033[0m"
-	exit 1
-fi
+	clear
+	echo "Ютуб в подкоп v0.3.0"
 
-if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; then
-    echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
-else
-	echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) устарела\033[0m"
-	echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
-	exit 1
-fi
+	TARGET_DOMAIN="ya.ru"
+	PACKET_COUNT=4 
+	PING_TIMEOUT=5
+	PACKAGE="podkop"
+	PODKOP_VERSION=""
 
-# Проверяем существование файла конфигурации подкопа
-if [ ! -f "$CONFIG_FILE" ]; then
-    echo "Ошибка: Файл $CONFIG_FILE не существует"
-    exit 1
-fi
+	# Проверяем наличие подкопа в системе и его версию
+	# Получаем версию установленного пакета (пусто если не установлен)
+	PODKOP_VERSION=$(opkg list-installed | grep "^$PACKAGE " | awk '{print $3}')
+	# Выделяем мажорную версию
+	PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
 
-echo
-# Останавливаем сервисы
-echo "Останавливаем сервисы podkop youtubeUnblock zapret"
-SERVICES_STOP="podkop youtubeUnblock zapret"
-SERVICES_START="opera-proxy dnsmasq odhcpd podkop" # youtubeUnblock
+	if [ -z "$PODKOP_VERSION" ]; then
+		echo -e "\033[33m
+		PODKOP НЕ УСТАНОВЛЕН!
+		УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845\033[0m"
+		exit 1
+	fi
 
-for service in $SERVICES_STOP; do
-  service $service stop >/dev/null 2>&1
-  service $service disable >/dev/null 2>&1
-done
-
-echo
-echo "Добавляем Ютуб в подкоп"
-
-# Создаем backup
-# cp "$CONFIG_FILE" "${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
-# echo "Создан backup: ${CONFIG_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
-
-# Удаляем все list community_lists 'youtube' и option community_lists 'youtube'
-sed -i '/list community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
-sed -i '/option community_lists '\''youtube'\''/d' "${CONFIG_FILE}"
-
-# Подсчитываем количество секций config
-count=$(grep -c '^config section' "$CONFIG_FILE")
-
-# Получаем полное имя секции
-if [ "$count" -gt 1 ]; then
-		 target_section=$(grep '^config section' "$CONFIG_FILE" | awk 'NR==2 {print $0; exit}')
-	elif [ "$count" -eq 1 ]; then
-	     target_section=$(grep '^config section' "$CONFIG_FILE")
+	if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; then
+		echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
 	else
-	     echo "Секций в "${CONFIG_FILE}" не найдено"
-		 exit 1
-fi
-# и активируем листы сообщества
-section_name=""
-section_name=$(echo "$target_section" | sed "s/.*'\([^']*\)'.*/\1/")
-if [ -n target_section ]; then
-	# uci set podkop.${section_name}.community_lists_enabled='1'
-	uci add_list podkop.${section_name}.community_lists='youtube'
+		echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) устарела\033[0m"
+		echo -e "\033[33mРекомендуется обновить $PACKAGE до версии v0.7\033[0m"
+		exit 1
+	fi
+
+	echo
+	# Останавливаем сервисы
+	SERVICES_STOP="youtubeUnblock zapret"
+	SERVICES_START="opera-proxy dnsmasq odhcpd podkop"
+	echo "Останавливаем сервисы: $SERVICES_STOP"
+	
+	for service in $SERVICES_STOP; do
+	  service $service stop >/dev/null 2>&1
+	  service $service disable >/dev/null 2>&1
+	done
+
+	# Получаем имена секций из конфига подкопа, проверяем работоспособность интерфейсов итп.
+	# 1. ПОДГОТОВКА ИМЁН СЕКЦИЙ
+	SECTIONS_LIST=$(uci show podkop | grep "=section" | cut -d '.' -f 2 | cut -d '=' -f 1)
+	SECTION_COUNT=$(echo "$SECTIONS_LIST" | wc -l)
+	FIRST_SECTION_NAME=$(echo "$SECTIONS_LIST" | head -n 1)
+	SECOND_SECTION_NAME=$(echo "$SECTIONS_LIST" | sed -n '2p')
+
+	# 2. КРИТИЧЕСКАЯ ПРОВЕРКА И УСЛОВИЕ ОДНОЙ СЕКЦИИ
+	if [ "$SECTION_COUNT" -lt 1 ]; then
+		echo "Критическая ошибка: В конфигурации 'podkop' не найдено ни одной секции."
+		exit 1		
+	fi
+	
+	# Если есть хотя бы одна секция, удаляем из неё community_list 'youtube'
+	echo "$SECTIONS_LIST" | while IFS= read -r SECTION_NAME; do
+		uci del_list podkop."$SECTION_NAME".community_lists='youtube'
+	done
 	uci commit podkop
-	sleep 1
-	# заменяем внесённую uci строку на верную
-	sed -i "s/option community_lists 'youtube'/list community_lists 'youtube'/g" "$CONFIG_FILE"
+	sleep 3
+	
+	if [ "$SECTION_COUNT" -eq 1 ]; then
+		echo "В настройках podkop обнаружена только одна секция: $FIRST_SECTION_NAME"
+		echo "-> Добавляем youtube в секцию $FIRST_SECTION_NAME"
+		uci add_list podkop."$FIRST_SECTION_NAME".community_lists='youtube'
+		services_restart		
+		exit 0	
+	fi
+
+	# 3. ПОЛУЧЕНИЕ ИНТЕРФЕЙСА (Интерфейс берется только из второй секции)
+	INTERFACE_NAME=$(uci -q get podkop."$SECOND_SECTION_NAME".interface)
+	SHOULD_WRITE_TO_SECOND=0
+
+	# === 4. УСЛОВИЕ ПРОВЕРКИ: Интерфейс задан? ===
+	if [ -n "$INTERFACE_NAME" ]; then
+		echo "Выполняем проверку ping ($INTERFACE_NAME)..."
+		# ping с таймаутом и привязкой к интерфейсу
+		ping -c "$PACKET_COUNT" -W "$PING_TIMEOUT" -I "$INTERFACE_NAME" "$TARGET_DOMAIN" >/dev/null 2>&1
+		CHECK_RESULT=$?
+		if [ "$CHECK_RESULT" -eq 0 ]; then
+			echo "Ping прошел успешно"
+			SHOULD_WRITE_TO_SECOND=1
+		else
+			echo "Ping не прошел. (Код: $CHECK_RESULT)"
+			# SHOULD_WRITE_TO_SECOND остается 0 (логика провала)
+		fi
+	fi
+
+	# Если INTERFACE_NAME пуст, то SHOULD_WRITE_TO_SECOND остается 0 (логика провала)
+	# === 5. ФИНАЛЬНОЕ ДЕЙСТВИЕ ===
+	if [ "$SHOULD_WRITE_TO_SECOND" -eq 1 ]; then
+		# УСПЕХ: пишем во вторую секцию
+		uci add_list podkop."$SECOND_SECTION_NAME".community_lists='youtube'
+		echo "-> Добавляем youtube в секцию $SECOND_SECTION_NAME"
+	else
+		# ПРОВАЛ (любой случай: нет интерфейса, пинг провален): пишем в первую секцию
+		uci add_list podkop."$FIRST_SECTION_NAME".community_lists='youtube'
+		echo "-> Добавляем youtube в секцию $FIRST_SECTION_NAME"
+	fi
+
+	services_restart
+
+}
+
+	services_restart() {
+	uci commit podkop
 	uci commit
-	# Перезапускаем сеть
-	# service dnsmasq restart
-	# service network restart
-fi
+	echo "Перезапускаем сервисы"
+	for service in $SERVICES_START; do
+	  service $service restart >/dev/null 2>&1; echo "  $service"
+	  service $service enable >/dev/null 2>&1
+	done
+	sleep 2; service podkop restart >/dev/null 2>&1
 
+	echo "-----------------------------------"
+	echo -e "${GREEN}Настройка окончена. Конфигурация обновлена.
 
-# Заменяем строку с секцией на саму себя + list community_lists 'youtube'
-# sed -i "/^${target_section}/a\\\tlist community_lists 'youtube'" "$CONFIG_FILE"
-
-# Проверяем добавление нового параметра в $CONFIG_FILE
-# if ! grep -q "list community_lists 'youtube'" /etc/config/podkop; then
-  # echo "Не удалось добавить параметр, прекращаю работу"
-  # service podkop restart >/dev/null 2>&1
-  # service podkop enable >/dev/null 2>&1
-  # exit 1
-# fi
-
-
-echo "Перезапускаем сервисы"
-
-for service in $SERVICES_START; do
-  service $service restart >/dev/null 2>&1; echo "  $service"
-  service $service enable >/dev/null 2>&1
-done
-echo
-echo "Добавлено в секцию: $target_section"
-echo "Проверяйте доступ к Ютуб"
-echo
-
-
-# echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
-# sleep 10
-# reboot
-
+!!!_ЗАКРОЙТЕ БРАУЗЕР_!!!
+Откройте его вновь и ТОЛЬКО ТЕПЕРЬ проверяйте доступ к Ютуб.
+${RESET}
+"
+	}
+	
+main
 exit 0
+
+echo "РОУТЕР ПЕРЕЗАГРУЗИТСЯ ЧЕРЕЗ 10 СЕКУНД!"
+sleep 10
+reboot
+
+
 # Ютуб в подкоп
 # u_to_podkop
