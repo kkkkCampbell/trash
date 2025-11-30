@@ -17,7 +17,7 @@ RESET='\033[0m'
 main() {
 
 	clear
-	echo "Ютуб в подкоп v0.3.0"
+	echo "Ютуб в подкоп v0.3.1"
 
 	TARGET_DOMAIN="ya.ru"
 	PACKET_COUNT=4 
