@@ -38,7 +38,7 @@ main() {
 		exit 1
 	fi
 
-	if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[7]"; then
+	if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
 		echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
 	else
 		echo -e "\033[33mУстановленная версия пакета $PACKAGE ($PODKOP_VERSION) устарела\033[0m"
@@ -47,6 +47,7 @@ main() {
 	fi
 
 	echo
+
 	# Останавливаем сервисы
 	SERVICES_STOP="youtubeUnblock zapret"
 	SERVICES_START="opera-proxy dnsmasq odhcpd podkop"
@@ -59,7 +60,10 @@ main() {
 
 	# Получаем имена секций из конфига подкопа, проверяем работоспособность интерфейсов итп.
 	# 1. ПОДГОТОВКА ИМЁН СЕКЦИЙ
-	SECTIONS_LIST=$(uci show podkop | grep "=section" | cut -d '.' -f 2 | cut -d '=' -f 1)
+	if [ "$PODKOP_VERSION" = "v0.6" ]; then STRING_TO_FIND="=extra"; fi
+	if [ "$PODKOP_VERSION" = "v0.7" ]; then STRING_TO_FIND="=section"; fi		
+	SECTIONS_LIST=$(uci show podkop | grep "${STRING_TO_FIND}" | cut -d '.' -f 2 | cut -d '=' -f 1)
+	if [ "$PODKOP_VERSION" = "v0.6" ]; then SECTIONS_LIST=$(printf "main\n%s" "$SECTIONS_LIST"); fi
 	SECTION_COUNT=$(echo "$SECTIONS_LIST" | wc -l)
 	FIRST_SECTION_NAME=$(echo "$SECTIONS_LIST" | head -n 1)
 	SECOND_SECTION_NAME=$(echo "$SECTIONS_LIST" | sed -n '2p')
@@ -67,12 +71,22 @@ main() {
 	# 2. КРИТИЧЕСКАЯ ПРОВЕРКА И УСЛОВИЕ ОДНОЙ СЕКЦИИ
 	if [ "$SECTION_COUNT" -lt 1 ]; then
 		echo "Критическая ошибка: В конфигурации 'podkop' не найдено ни одной секции."
+		services_restart
 		exit 1		
 	fi
-	
+
 	# Если есть хотя бы одна секция, удаляем из неё community_list 'youtube'
-	echo "$SECTIONS_LIST" | while IFS= read -r SECTION_NAME; do
+	for SECTION_NAME in $SECTIONS_LIST; do
 		uci del_list podkop."$SECTION_NAME".community_lists='youtube'
+		# Если в этой секции 'youtube' был единственным community_list
+		# отключаем листы сообщества в жопу (да, я задолбался!)
+		COMMUNITY_LIST="$(uci -q get podkop."$SECTION_NAME".community_lists)"
+		# Проверяем, является ли значение пустой строкой.
+		if [ -z "$COMMUNITY_LIST" ]; then
+			# echo "Секция $SECTION_NAME: community_lists пуст. Установка community_lists_enabled='0'"
+			uci set podkop."$SECTION_NAME".community_lists_enabled='0'
+		fi
+	
 	done
 	uci commit podkop
 	sleep 3
@@ -81,6 +95,7 @@ main() {
 		echo "В настройках podkop обнаружена только одна секция: $FIRST_SECTION_NAME"
 		echo "-> Добавляем youtube в секцию $FIRST_SECTION_NAME"
 		uci add_list podkop."$FIRST_SECTION_NAME".community_lists='youtube'
+		uci set podkop."$FIRST_SECTION_NAME".community_lists_enabled='1'
 		services_restart		
 		exit 0	
 	fi
@@ -109,10 +124,12 @@ main() {
 	if [ "$SHOULD_WRITE_TO_SECOND" -eq 1 ]; then
 		# УСПЕХ: пишем во вторую секцию
 		uci add_list podkop."$SECOND_SECTION_NAME".community_lists='youtube'
+		uci set podkop."$SECOND_SECTION_NAME".community_lists_enabled='1'
 		echo "-> Добавляем youtube в секцию $SECOND_SECTION_NAME"
 	else
 		# ПРОВАЛ (любой случай: нет интерфейса, пинг провален): пишем в первую секцию
 		uci add_list podkop."$FIRST_SECTION_NAME".community_lists='youtube'
+		uci set podkop."$FIRST_SECTION_NAME".community_lists_enabled='1'
 		echo "-> Добавляем youtube в секцию $FIRST_SECTION_NAME"
 	fi
 
