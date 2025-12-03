@@ -17,35 +17,105 @@
 
 
 
+
+# Собираем информацию о состоянии сервисов на момент первого запуска.
+if [ ! -f /etc/zapret_autoconfig/services_state.sh ]; then
+
+echo "#!/bin/ash" > /etc/zapret_autoconfig/services_state.sh
+
+# Проверяем каждый сервис
+for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
+    if /etc/init.d/"$serv" enabled 2>/dev/null; then
+			echo "service $serv enable" >> /etc/zapret_autoconfig/services_state.sh
+		else
+			echo "service $serv disable" >> /etc/zapret_autoconfig/services_state.sh
+		fi
+		
+		if /etc/init.d/"$serv" running 2>/dev/null; then
+			echo "service $serv start" >> /etc/zapret_autoconfig/services_state.sh
+		else
+			echo "service $serv stop" >> /etc/zapret_autoconfig/services_state.sh
+    fi
+done
+
+# Проверяем sing-box и если запущен, добавляем команды для podkop
+if /etc/init.d/sing-box running 2>/dev/null; then
+    echo "service podkop restart" >> /etc/zapret_autoconfig/services_state.sh
+    echo "service podkop enable" >> /etc/zapret_autoconfig/services_state.sh
+fi
+
+# Выводим содержимое файла на экран
+# cat /etc/zapret_autoconfig/services_state.sh
+fi
+
+
+
+# Останавливаем youtubeUnblock
+echo "Останавливаем youtubeUnblock"
+service youtubeUnblock stop >/dev/null 2>&1
+service youtubeUnblock disable >/dev/null 2>&1
+
+clear
+
+# Получаем имя скрипта и путь до скрипта
+SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
+# Удаление двойного слэша, если он существует
+SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
+OPKG_UPDATED=0
+FINAL_FILE="/etc/final.txt"
+
+# КОНСТАНТЫ
+BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
+MAX_QUICK_STRATEGIES=5
+VERSION="zapret_autoconfig v0.0.0 (test version)"
+
+# ЦВЕТА
+# Объявление переменных с кодами цветов
+RED='\033[0;31m'       # Красный
+GREEN='\033[0;32m'     # Зеленый
+YELLOW='\033[1;33m'    # Желтый
+BLUE='\033[0;34m'      # Синий
+NC='\033[0m'           # Нет цвета (сброс к нормальному)
+
+echo $VERSION
+
+
 # ФУНКЦИИ
 
 resurrection() {
 
 	# Удаляем модули подбора стратегии
-	# Переустанавливаем запрет
+
 	file=$(find /opt/backup/zapret -type f -exec ls -lt {} + | tail -n 1 | awk '{print $NF}')
 	echo "Восстанавливаем конфигурацию zapret"
 	if [ -n "$file" ]; then mv "$file" /etc/config/zapret; fi
 	echo
-	echo "В ответ на все вопросы просто жмите Enter"
+	echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
 	echo
+	sleep 1
 	if [ -f "/opt/zapret/uninstall_easy.sh" ]; then 
 		sh /opt/zapret/uninstall_easy.sh
 	fi
 	echo
+
+	# Переустанавливаем запрет
 	echo "Переустанавливаем zapret."
 	rm -r /opt/zapret >/dev/null 2>&1
 	rm -r /opt/backup/zapret >/dev/null 2>&1
 	opkg remove luci-app-zapret zapret >/dev/null 2>&1
 	if [ "$OPKG_UPDATED" -ne 1 ]; then opkg update; fi
 	opkg install --force-reinstall luci-app-zapret zapret >/dev/null 2>&1
-
+	echo
+	echo "Запрет, вроде, переустановлен."
+	echo
+	sh /etc/zapret_autoconfig/services_state.sh	
+	rm /etc/zapret_autoconfig/services_state.sh
 }
 
 backup_zapret() {
 
 	# Архивируем конфиг zapret
-	BACKUP_FILE="/opt/backup/zapret/config_zapret_$(date +'%Y-%m-%d_%H-%M')"
+	BACKUP_FILE="/opt/backup/zapret/config_zapret_$(date +'%Y-%m-%d_%H-%M-%S')"
 
 	# Проверяем существование файла
 	if [ ! -f "$BACKUP_FILE" ]; then
@@ -141,7 +211,9 @@ EOF
     sleep 1
     echo "Запускаю zapret..."
     service zapret restart >/dev/null 2>&1
-    
+	sleep 5
+    service zapret restart >/dev/null 2>&1
+   
     sleep 2
     if /etc/init.d/zapret status >/dev/null 2>&1; then
         echo "Zapret успешно запущен с новой стратегией"
@@ -150,6 +222,20 @@ EOF
         echo "Предупреждение: zapret не запустился автоматически"
     fi
 } # strat_replace end
+
+
+strategy_counter() {
+
+	# Подсчет количества строк в файле
+	if [ ! -f "$FINAL_FILE" ]; then
+		echo "Файл $FINAL_FILE не найден"
+		STRAT_COUNT=0
+	else
+		STRAT_COUNT=$(wc -l < "$FINAL_FILE") >/dev/null 2>&1
+		[ -z "$STRAT_COUNT" ] && STRAT_COUNT=0
+	fi
+	
+}
 
 
 # Функция подбора стратегий
@@ -176,27 +262,13 @@ SCAN() {
     if [ ! -s /tmp/resscan/final.txt ]; then
         echo "Ошибка: не удалось извлечь стратегию"
         exit 1
+	else
+		mv /tmp/resscan/final.txt /etc/final.txt
     fi
 	
 }
 
 # ФУНКЦИИ ЗАКОНЧИЛИСЬ, БОЛЬШЕ НЕ ПРИДУМАЛ
-
-
-clear
-
-# Получаем имя скрипта и путь до скрипта
-SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
-# Удаление двойного слэша, если он существует
-SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
-OPKG_UPDATED=0
-
-# КОНСТАНТЫ
-BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
-MAX_QUICK_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.0 (test version)"
-
-echo $VERSION
 
 # Архивируем текущий конфиг запрета
 backup_zapret
@@ -213,8 +285,9 @@ fi
 # Устанавливаем всякое для поиска стратегий
 if [ ! -f /opt/zapret/mdig/mdig ]; then 
     echo "Устанавливаем необходимые для работы пакеты"
-    echo "В ответ на все вопросы просто жмите Enter"
-    echo; echo
+	echo
+    echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
+    echo
     sleep 3
     
     service zapret stop >/dev/null 2>&1
@@ -285,10 +358,11 @@ while true; do # SCAN loop
 	while true; do	# Меню loop
 		# Выводим меню
 		clear
+		strategy_counter
 		echo "$VERSION
 
 1 - Ищем стратегии
-2 - Применяем ранее найденные стратегии
+2 - Применяем ранее найденные стратегии. Сейчас: $STRAT_COUNT
 3 - Изменить количество итоговых стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES
 
 0 - Выход
@@ -298,8 +372,9 @@ while true; do # SCAN loop
 		read -r idx
 		case $idx in
 			00)
-				echo "Удаляемсу, нащяяяльникама..."
+				echo; echo "Удаляемсу, нащяяяльникамана..."
 				resurrection
+				echo
 				echo "КОНЕЦ"
 				echo				
 				exit 0
@@ -312,56 +387,49 @@ while true; do # SCAN loop
 				FILE=""
 				rm "/etc/final.txt"
 				SCAN
-				cp /tmp/resscan/final.txt /etc/final.txt
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
 				# exit
 				;;
-			2)
+			2) 
 				if [ -f "/etc/final.txt" ]; then
 					echo "Файл со стратегиями найден."
 					FILE="/etc/final.txt"
+					break
 				else
-					echo "Файл со стратегиями не найден. Запускаю сканирование."
-					FILE=""
+					echo "Файл со стратегиями не найден. Выберите 1 для запуска сканирования."
+					sleep 5
 				fi
-				break
 				;;
 			3) 
 				# Сколько стратегий найти
-				printf "Новоое количество рабочих стратегий: "
+				printf "Новое количество рабочих стратегий: "
 				read -r idx
 				MAX_QUICK_STRATEGIES="$idx"
 				;;
 			*)
-				echo "Некорректный ввод. Повторите попытку."
+				printf "Некорректный ввод. Повторите попытку."
+				sleep 2
 				;;
 		esac
 	done
 
-	if [ "$FILE" -eq "" ]; then
-		echo "Запускаю поиск стратегий..."
-		SCAN # Вызываем основную функцию поиска
-		cp /tmp/resscan/final.txt /etc/final.txt
-	fi
-
-	# Подсчет количества строк в файле
-	if [ ! -f "$FILE" ]; then
-		echo "Файл $FILE не найден"
-		exit 1
-	else
-		COUNT=$(wc -l < "$FILE") >/dev/null 2>&1
-	fi
+	# if [ -z "$FILE" ]; then
+		# echo "Запускаю поиск стратегий..."
+		# SCAN # Вызываем основную функцию поиска
+	# fi
+	
+	strategy_counter
 
 	# Если файл пустой
-	if [ "$COUNT" -eq 0 ]; then
+	if [ "$STRAT_COUNT" -eq 0 ]; then
 		echo "Файл $FILE пуст"
 		exit 1
 	fi
 
 	# Основной цикл по строкам файла
 	i=1
-	while [ "$i" -le "$COUNT" ]; do
+	while [ "$i" -le "$STRAT_COUNT" ]; do
 		# Чтение строки по номеру
 		STRAT=$(sed -n "${i}p" "$FILE")
 		
@@ -374,9 +442,9 @@ while true; do # SCAN loop
 			continue
 		fi
 		
-		echo; echo
-		echo "Применяем стратегию $i из $COUNT:"
-		echo "$STRAT"
+		echo
+		printf "Применяем стратегию $i из $STRAT_COUNT: "
+		echo -e "${GREEN}$STRAT${NC}"
 		
 		# Применяем стратегию
 		strat_replace "$STRAT"
@@ -399,8 +467,8 @@ while true; do # SCAN loop
 					break
 					;;
 				*)
-					echo "Введите 1 или 0:"
-					echo "> "
+					echo "Проверьте доступ к Ютуб. 1 - Доступ получен. 0 - Нет доступа."
+					printf "> "
 					;;
 			esac
 		done
@@ -418,7 +486,7 @@ while true; do # SCAN loop
 		
 		case $response in
 			[Yy]*)
-				MAX_QUICK_STRATEGIES=$((COUNT + 5))
+				MAX_QUICK_STRATEGIES=$((STRAT_COUNT + 5))
 				echo "Переменная MAX_QUICK_STRATEGIES установлена в: $MAX_QUICK_STRATEGIES"
 				export MAX_QUICK_STRATEGIES
 				rm -f /etc/final.txt
