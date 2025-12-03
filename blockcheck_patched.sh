@@ -15,7 +15,7 @@
 ###########################################################
 
 echo
-echo "PATCHED VERSION"
+echo "BLOCKHECK PATCHED VERSION"
 echo
 
 sleep 5
