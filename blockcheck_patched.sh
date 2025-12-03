@@ -14,6 +14,11 @@
 
 ###########################################################
 
+echo
+echo "PATCHED VERSION"
+echo
+
+sleep 5
 
 EXEDIR="$(dirname "$0")"
 EXEDIR="$(cd "$EXEDIR"; pwd)"
