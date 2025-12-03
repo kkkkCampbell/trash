@@ -15,129 +15,60 @@
 
 ############################################################
 
-PKG_UPDATED=0
-BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
-MAX_QUICK_STRATEGIES=3
 
-clear
 
-echo "zapret_autoconfig v0.0.0 (test version)"
+# ФУНКЦИИ
 
-# Архивируем конфиг zapret
-BACKUP_FILE="/root/backup/zapret/config_zapret_$(date +'%Y-%m-%d_%H-%M')"
+resurrection() {
 
-# Проверяем существование файла
-if [ ! -f "$BACKUP_FILE" ]; then
-	echo "Создаем бэкап настроек zapret..."
-	
-	# Создаем директорию для бэкапа если её нет
-	mkdir -p /root/backup/zapret/
-	
-	# Создаем бэкап zapret
-	cp /etc/config/zapret $BACKUP_FILE
-	
-fi
-echo "Автобэкап сохранен в $BACKUP_FILE"
-sleep 3
-
-echo
-
-# Проверяем наличие /opt/zapret/mdig/mdig
-if [ ! -f /opt/zapret/mdig/mdig ]; then 
-    echo "Устанавливаем необходимые для работы пакеты"
-    echo "В ответ на все вопросы просто жмите Enter"
-    echo; echo
-    sleep 3
-    
-    service zapret stop >/dev/null 2>&1
-    opkg update
-    PKG_UPDATED=1
-    opkg install curl ipset git bind-dig git-http libcurl jq
-    
-    # Создаем /opt если нет
-    mkdir -p /opt
-    
-    cd /opt || exit 1
-    
-    # Скачиваем и распаковываем zapret
-    wget -q $(curl -s https://api.github.com/repos/bol-van/zapret/releases/latest | jq -r '.assets[] | select(.name | contains("openwrt")) | .browser_download_url') -O /opt/zapret-latest.tar.gz
-    tar -xvzf /opt/zapret-latest.tar.gz
-    rm -v /opt/zapret-latest.tar.gz
-    
-    # Находим распакованную директорию
-    zapret_dir=$(find /opt -maxdepth 1 -type d -name "zapret-v*" | head -1)
-    if [ -n "$zapret_dir" ]; then
-        mkdir -p /opt/zapret
-        cp -vr "$zapret_dir"/* /opt/zapret/
-        rm -rfv "$zapret_dir"
-        
-        cd /opt/zapret || exit 1
-        #./install_bin.sh
-        #./install_prereq.sh
-        ./install_easy.sh
-    else
-        echo "Ошибка: не удалось найти распакованные файлы zapret"
-        exit 1
-    fi
-fi
-
-# Останавливаем youtubeUnblock
-echo "Останавливаем youtubeUnblock"
-service youtubeUnblock stop >/dev/null 2>&1
-service youtubeUnblock disable >/dev/null 2>&1
-
-# Устанавливаем zapret
-if ! opkg list-installed | grep -q "^zapret -"; then
-    if [ "$PKG_UPDATED" -ne 1 ]; then 
-        opkg update
-    fi
-    opkg install luci-app-zapret zapret
-fi
-
-# Устанавливаем патченный blockcheck_patched.sh
-echo "Устанавливаем патченный blockcheck_patched.sh"
-wget -O /tmp/blockcheck_patched.sh https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/zapret_autoconfig/blockcheck_patched.sh >/dev/null 2>&1
-RETVAL=$?
-if [ $RETVAL -ne 0 ]; then
-    echo "Не удалось скачать скрипт."
-	printf "Проверяем наличие ранее скачанного файла...  "
-	if [ -n "$BLOCKCHECK_SH" ]; then
-		echo "Файл $BLOCKCHECK_SH отсутствует. Продолжение работы невозможно."
-		exit 1
+	# Удаляем модули подбора стратегии
+	# Переустанавливаем запрет
+	file=$(find /opt/backup/zapret -type f -exec ls -lt {} + | tail -n 1 | awk '{print $NF}')
+	echo "Восстанавливаем конфигурацию zapret"
+	if [ -n "$file" ]; then mv "$file" /etc/config/zapret; fi
+	echo
+	echo "В ответ на все вопросы просто жмите Enter"
+	echo
+	if [ -f "/opt/zapret/uninstall_easy.sh" ]; then 
+		sh /opt/zapret/uninstall_easy.sh
 	fi
-	
-else
-    echo "Скрипт успешно скачан и установлен."
-	mv /tmp/blockcheck_patched.sh /opt/zapret/blockcheck_patched.sh
-	chmod +x /opt/zapret/blockcheck_patched.sh
-fi
+	echo
+	echo "Переустанавливаем zapret."
+	rm -r /opt/zapret >/dev/null 2>&1
+	rm -r /opt/backup/zapret >/dev/null 2>&1
+	opkg remove luci-app-zapret zapret >/dev/null 2>&1
+	if [ "$OPKG_UPDATED" -ne 1 ]; then opkg update; fi
+	opkg install --force-reinstall luci-app-zapret zapret >/dev/null 2>&1
 
-sleep 1
-
-mkdir -p /tmp/resscan
-
-# Останавливаем zapret если запущен
-/etc/init.d/zapret stop >/dev/null 2>&1
-sleep 3
-killall nfqws >/dev/null 2>&1
-
-MAIN() {
-    # Запускаем поиск стратегий
-    export MAX_QUICK_STRATEGIES
-	echo "Ищем стратегий: $MAX_QUICK_STRATEGIES"
-    $BLOCKCHECK_SH 2>&1 | tee /tmp/resscan/raw.txt
-
-    # Извлекаем стратегию
-    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
-
-    if [ ! -s /tmp/resscan/final.txt ]; then
-        echo "Ошибка: не удалось извлечь стратегию"
-        exit 1
-    fi
-    return 0
 }
 
+backup_zapret() {
+
+	# Архивируем конфиг zapret
+	BACKUP_FILE="/opt/backup/zapret/config_zapret_$(date +'%Y-%m-%d_%H-%M')"
+
+	# Проверяем существование файла
+	if [ ! -f "$BACKUP_FILE" ]; then
+		echo "Архивируем настройки zapret..."
+		
+		# Создаем директорию для бэкапа если её нет
+		mkdir -p /opt/backup/zapret/
+		
+		# Создаем бэкап zapret
+		cp /etc/config/zapret $BACKUP_FILE  >/dev/null 2>&1
+		
+		echo "Автобэкап сохранен в $BACKUP_FILE"
+		
+		sleep 2
+		
+		echo
+	fi
+
+}
+
+# Функция заменяющая стратегию запрета на новую
 strat_replace() {
+
     local STRAT="$1"
     
     # Останавливаем zapret если запущен
@@ -146,15 +77,15 @@ strat_replace() {
         /etc/init.d/zapret stop
         sleep 2
     fi
+	killall nfqws >/dev/null 2>&1
 
     # Создаём временный файл с обновлённой конфигурацией
     TMPFILE=$(mktemp)
     
 
-
 # Перенастраиваем конфигурацию
 cat > "$TMPFILE" << 'EOF'
-config main 'config'
+config SCAN 'config'
 	option run_on_boot '1'
 	option FWTYPE 'nftables'
 	option POSTNAT '1'
@@ -191,13 +122,16 @@ EOF
     
     # Добавляем новую опцию со стратегией
     echo "$STRAT" >> "$TMPFILE"
-	echo "'" >> "$TMPFILE"
+	# echo "'" >> "$TMPFILE"
 	
-# cat >> "$TMPFILE" << 'EOF'
-	# --dpi-desync-repeats=3
-	# --dpi-desync-fooling=badsum
-	# --dpi-desync-fake-tls-mod=rnd,dupsid,sni=fonts.google.com'
-# EOF
+cat >> "$TMPFILE" << 'EOF'
+	--dpi-desync-repeats=11
+	'
+EOF
+
+# --dpi-desync-fake-tls-mod=rnd,dupsid,sni=fonts.google.com
+# --dpi-desync-fooling=badsum
+
 	
     # Заменяем оригинальный файл
     mv "$TMPFILE" /etc/config/zapret
@@ -205,7 +139,6 @@ EOF
     
     # Запускаем zapret
     sleep 1
-	killall nfqws  >/dev/null 2>&1
     echo "Запускаю zapret..."
     service zapret restart >/dev/null 2>&1
     
@@ -216,127 +149,293 @@ EOF
     else
         echo "Предупреждение: zapret не запустился автоматически"
     fi
+} # strat_replace end
+
+
+# Функция подбора стратегий
+SCAN() {
+
+	# Останавливаем youtubeUnblock
+	echo "Останавливаем youtubeUnblock"
+	service youtubeUnblock stop >/dev/null 2>&1
+	service youtubeUnblock disable >/dev/null 2>&1
+
+	# Останавливаем zapret
+	/etc/init.d/zapret stop >/dev/null 2>&1
+	sleep 1
+	killall nfqws >/dev/null 2>&1
+
+    # Запускаем поиск стратегий
+    export MAX_QUICK_STRATEGIES
+	echo "Ищем стратегий: $MAX_QUICK_STRATEGIES"
+    $BLOCKCHECK_SH 2>&1 | tee /tmp/resscan/raw.txt
+
+    # Извлекаем стратегию
+    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
+
+    if [ ! -s /tmp/resscan/final.txt ]; then
+        echo "Ошибка: не удалось извлечь стратегию"
+        exit 1
+    fi
+	
 }
+
+# ФУНКЦИИ ЗАКОНЧИЛИСЬ, БОЛЬШЕ НЕ ПРИДУМАЛ
+
+
+clear
+
+# Получаем имя скрипта и путь до скрипта
+SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
+# Удаление двойного слэша, если он существует
+SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
+OPKG_UPDATED=0
+
+# КОНСТАНТЫ
+BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
+MAX_QUICK_STRATEGIES=5
+VERSION="zapret_autoconfig v0.0.0 (test version)"
+
+echo $VERSION
+
+# Архивируем текущий конфиг запрета
+backup_zapret
+
+# Устанавливаем zapret, если он не установлен
+if ! opkg list-installed | grep -q "^zapret -"; then
+    if [ "$OPKG_UPDATED" -ne 1 ]; then 
+        opkg update
+		OPKG_UPDATED=1
+    fi
+	resurrection
+fi
+
+# Устанавливаем всякое для поиска стратегий
+if [ ! -f /opt/zapret/mdig/mdig ]; then 
+    echo "Устанавливаем необходимые для работы пакеты"
+    echo "В ответ на все вопросы просто жмите Enter"
+    echo; echo
+    sleep 3
+    
+    service zapret stop >/dev/null 2>&1
+    opkg update
+    OPKG_UPDATED=1
+    opkg install curl ipset git bind-dig git-http libcurl jq
+    
+    # Создаем /opt если нет
+    mkdir -p /opt
+    
+    cd /opt || exit 1
+    
+    # Скачиваем и распаковываем zapret
+    wget -q $(curl -s https://api.github.com/repos/bol-van/zapret/releases/latest | jq -r '.assets[] | select(.name | contains("openwrt")) | .browser_download_url') -O /opt/zapret-latest.tar.gz
+    tar -xvzf /opt/zapret-latest.tar.gz
+    rm -v /opt/zapret-latest.tar.gz
+    
+    # Находим распакованную директорию
+    zapret_dir=$(find /opt -maxdepth 1 -type d -name "zapret-v*" | head -1)
+    if [ -n "$zapret_dir" ]; then
+        mkdir -p /opt/zapret
+        cp -vr "$zapret_dir"/* /opt/zapret/
+        rm -rfv "$zapret_dir"
+        
+        cd /opt/zapret || exit 1
+        #./install_bin.sh
+        #./install_prereq.sh
+        ./install_easy.sh
+		echo "speedtest.net" >>"/opt/zapret/ipset/zapret-hosts-user.txt"
+    else
+        echo "Ошибка: не удалось найти распакованные файлы zapret"
+        exit 1
+    fi
+fi
+
+# Устанавливаем патченный blockcheck_patched.sh
+echo "Устанавливаем патченный blockcheck_patched.sh"
+wget -O /tmp/blockcheck_patched.sh https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/zapret_autoconfig/blockcheck_patched.sh >/dev/null 2>&1
+RETVAL=$?
+if [ $RETVAL -ne 0 ]; then
+    echo "Не удалось скачать скрипт."
+	printf "Проверяем наличие ранее скачанного файла...  "
+	if [ -n "$BLOCKCHECK_SH" ]; then
+		echo "Файл $BLOCKCHECK_SH отсутствует. Продолжение работы невозможно."
+		exit 1
+	fi
+else
+    echo "Скрипт успешно скачан и установлен."
+	mv /tmp/blockcheck_patched.sh /opt/zapret/blockcheck_patched.sh
+	chmod +x /opt/zapret/blockcheck_patched.sh
+fi
+
+sleep 1
+
+# Создаём директорию для хранения временных файлов
+mkdir -p /tmp/resscan
+
+
+
+
+
+
+
 
 # ОСНОВНОЙ КОД
 
-# Если найден файл со стратегиями, предлагаем взять стратегии из него
-answer=1
-if [ -f "/etc/final.txt" ]; then
-	echo
-    echo "Найден файл со стратегиями, использовать его, или просканировать заново?"
-    echo "1 - Использовать файл, 0 - просканировать заново (1 по умолчанию)"
-    printf "> "
-    read -r answer
-    answer="${answer:-1}" # Значение по умолчанию
+while true; do # SCAN loop
+	while true; do	# Меню loop
+		# Выводим меню
+		clear
+		echo "$VERSION
 
-	if [ "$answer" = "1" ]; then 
-		FILE="/etc/final.txt"
-	else
-		answer=0
-		FILE="/tmp/resscan/final.txt"
-		rm -f /etc/final.txt
+1 - Ищем стратегии
+2 - Применяем ранее найденные стратегии
+3 - Изменить количество итоговых стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES
+
+0 - Выход
+00 - Верни как было до установки этого барахла!
+"
+		printf "> "
+		read -r idx
+		case $idx in
+			00)
+				echo "Удаляемсу, нащяяяльникама..."
+				resurrection
+				echo "КОНЕЦ"
+				echo				
+				exit 0
+				;;
+			0)
+				service zapret restart >/dev/null 2>&1
+				exit 0
+				;;
+			1)  
+				FILE=""
+				rm "/etc/final.txt"
+				SCAN
+				cp /tmp/resscan/final.txt /etc/final.txt
+				# # Перезапускаем сами себя
+				# sh "$SCRIPT_PATH_NAME" &
+				# exit
+				;;
+			2)
+				if [ -f "/etc/final.txt" ]; then
+					echo "Файл со стратегиями найден."
+					FILE="/etc/final.txt"
+				else
+					echo "Файл со стратегиями не найден. Запускаю сканирование."
+					FILE=""
+				fi
+				break
+				;;
+			3) 
+				# Сколько стратегий найти
+				printf "Новоое количество рабочих стратегий: "
+				read -r idx
+				MAX_QUICK_STRATEGIES="$idx"
+				;;
+			*)
+				echo "Некорректный ввод. Повторите попытку."
+				;;
+		esac
+	done
+
+	if [ "$FILE" -eq "" ]; then
+		echo "Запускаю поиск стратегий..."
+		SCAN # Вызываем основную функцию поиска
+		cp /tmp/resscan/final.txt /etc/final.txt
 	fi
-fi
 
+	# Подсчет количества строк в файле
+	if [ ! -f "$FILE" ]; then
+		echo "Файл $FILE не найден"
+		exit 1
+	else
+		COUNT=$(wc -l < "$FILE") >/dev/null 2>&1
+	fi
 
+	# Если файл пустой
+	if [ "$COUNT" -eq 0 ]; then
+		echo "Файл $FILE пуст"
+		exit 1
+	fi
 
-if [ $answer -eq 0 ]; then
-	echo "Запускаю поиск стратегий..."
-	MAIN # Вызываем основную функцию поиска
-	cp /tmp/resscan/final.txt /etc/final.txt
-fi
+	# Основной цикл по строкам файла
+	i=1
+	while [ "$i" -le "$COUNT" ]; do
+		# Чтение строки по номеру
+		STRAT=$(sed -n "${i}p" "$FILE")
+		
+		# Удаляем лишние пробелы
+		STRAT=$(echo "$STRAT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+		
+		if [ -z "$STRAT" ]; then
+			echo "Строка $i пуста, пропускаем..."
+			i=$((i + 1))
+			continue
+		fi
+		
+		echo; echo
+		echo "Применяем стратегию $i из $COUNT:"
+		echo "$STRAT"
+		
+		# Применяем стратегию
+		strat_replace "$STRAT"
+		# service network restart
+		# service dnsmasq restart
+		echo "Проверьте доступ к Ютуб. 1 - Доступ получен. 0 - Нет доступа."
+		printf "> "
+		
+		# Ожидание ответа пользователя
+		while true; do
+			read -r answer
+			case $answer in
+				1)
+					echo "Доступ получен. Сохраняем стратегию и выходим."
+					echo "$STRAT" > /etc/zapret_success_strategy.txt
+					exit 0
+					;;
+				0)
+					echo "Доступ отсутствует. Пробуем следующую стратегию..."
+					break
+					;;
+				*)
+					echo "Введите 1 или 0:"
+					echo "> "
+					;;
+			esac
+		done
+		
+		i=$((i + 1))
+	done
 
+	# Если все итерации завершились с ответом 0
+	echo "На все стратегии получен ответ 0"
+	echo "Повторить поиск стратегий? (Y/n)"
 
-# Подсчет количества строк в файле
-if [ ! -f "$FILE" ]; then
-    echo "Файл $FILE не найден"
-    exit 1
-fi
-
-COUNT=$(wc -l < "$FILE")
-
-# Если файл пустой
-if [ "$COUNT" -eq 0 ]; then
-    echo "Файл $FILE пуст"
-    exit 1
-fi
-
-# Основной цикл по строкам файла
-i=1
-while [ "$i" -le "$COUNT" ]; do
-    # Чтение строки по номеру
-    STRAT=$(sed -n "${i}p" "$FILE")
-    
-    # Удаляем лишние пробелы
-    STRAT=$(echo "$STRAT" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-    
-    if [ -z "$STRAT" ]; then
-        echo "Строка $i пуста, пропускаем..."
-        i=$((i + 1))
-        continue
-    fi
-    
-    echo; echo
-    echo "Применяем стратегию $i из $COUNT:"
-    echo "$STRAT"
-    
-    # Применяем стратегию
-    strat_replace "$STRAT"
-    
-    echo "Проверьте доступ к Ютуб. 1 - Доступ получен. 0 - Нет доступа."
-	printf "> "
-    
-    # Ожидание ответа пользователя
-    while true; do
-        read -r answer
-        case $answer in
-            1)
-                echo "Доступ получен. Сохраняем стратегию и выходим."
-                echo "$STRAT" > /etc/zapret_success_strategy.txt
-                exit 0
-                ;;
-            0)
-                echo "Доступ отсутствует. Пробуем следующую стратегию..."
-                break
-                ;;
-            *)
-                echo "Введите 1 или 0:"
-				echo "> "
-                ;;
-        esac
-    done
-    
-    i=$((i + 1))
-done
-
-# Если все итерации завершились с ответом 0
-echo "На все стратегии получен ответ 0"
-echo "Повторить поиск стратегий? (Y/n)"
-
-while true; do
-    read -r response
-    response="${response:-Y}" # Значение по умолчанию Y
-    
-    case $response in
-        [Yy]*)
-            MAX_QUICK_STRATEGIES=$((COUNT + 5))
-            echo "Переменная MAX_QUICK_STRATEGIES установлена в: $MAX_QUICK_STRATEGIES"
-            export MAX_QUICK_STRATEGIES
-            rm -f /etc/final.txt
-            MAIN
-            if [ $? -eq 0 ]; then
-                # Перезапускаем скрипт с новыми стратегиями
-                exec "$0"
-            fi
-            exit 0
-            ;;
-        [Nn]*)
-            echo "Выход из скрипта."
-            exit 0
-            ;;
-        *)
-            echo "Введите Y или N:"
-            ;;
-    esac
+	while true; do
+		read -r response
+		response="${response:-Y}" # Значение по умолчанию Y
+		
+		case $response in
+			[Yy]*)
+				MAX_QUICK_STRATEGIES=$((COUNT + 5))
+				echo "Переменная MAX_QUICK_STRATEGIES установлена в: $MAX_QUICK_STRATEGIES"
+				export MAX_QUICK_STRATEGIES
+				rm -f /etc/final.txt
+				SCAN
+				if [ $? -eq 0 ]; then
+					# Перезапускаем скрипт с новыми стратегиями
+					exec "$0"
+				fi
+				exit 0
+				;;
+			[Nn]*)
+				echo "Выход из скрипта."
+				exit 0
+				;;
+			*)
+				echo "Введите Y или N:"
+				;;
+		esac
+	done
 done
