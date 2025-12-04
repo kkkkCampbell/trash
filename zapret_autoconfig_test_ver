@@ -16,8 +16,6 @@
 ############################################################
 
 
-
-
 # Собираем информацию о состоянии сервисов на момент первого запуска.
 if [ ! -f /etc/zapret_autoconfig/services_state.sh ]; then
 
@@ -48,8 +46,6 @@ fi
 # cat /etc/zapret_autoconfig/services_state.sh
 fi
 
-
-
 # Останавливаем youtubeUnblock
 echo "Останавливаем youtubeUnblock"
 service youtubeUnblock stop >/dev/null 2>&1
@@ -57,17 +53,21 @@ service youtubeUnblock disable >/dev/null 2>&1
 
 clear
 
-# Получаем имя скрипта и путь до скрипта
-SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
-# Удаление двойного слэша, если он существует
-SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
+
 OPKG_UPDATED=0
-FINAL_FILE="/etc/final.txt"
 
 # КОНСТАНТЫ
 BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
 MAX_QUICK_STRATEGIES=5
 VERSION="zapret_autoconfig v0.0.0 (test version)"
+TEST_ADDRESS="rr3---sn-385ou-8v1s.googlevideo.com"
+TEST_URL="https://www.youtube.com"
+FINDED_STRATEGY="/etc/zapret_autoconfig/finded_strategy.txt" # Файл, в котором хранятся найденные стратегии
+PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в котором хранятся дефолтовые стратегии
+# Получаем имя скрипта и путь до скрипта
+SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
+SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
+
 
 # ЦВЕТА
 # Объявление переменных с кодами цветов
@@ -82,7 +82,7 @@ echo $VERSION
 
 # ФУНКЦИИ
 
-resurrection() {
+delete_me() {
 
 	# Удаляем модули подбора стратегии
 
@@ -143,9 +143,8 @@ strat_replace() {
     
     # Останавливаем zapret если запущен
     if [ -x /etc/init.d/zapret ] && /etc/init.d/zapret status >/dev/null 2>&1; then 
-        echo "Останавливаю zapret..."
-        /etc/init.d/zapret stop
-        sleep 2
+        # echo "Останавливаю zapret..."
+        /etc/init.d/zapret stop >/dev/null 2>&1
     fi
 	killall nfqws >/dev/null 2>&1
 
@@ -155,7 +154,7 @@ strat_replace() {
 
 # Перенастраиваем конфигурацию
 cat > "$TMPFILE" << 'EOF'
-config SCAN 'config'
+config strategy_scan 'config'
 	option run_on_boot '1'
 	option FWTYPE 'nftables'
 	option POSTNAT '1'
@@ -192,54 +191,46 @@ EOF
     
     # Добавляем новую опцию со стратегией
     echo "$STRAT" >> "$TMPFILE"
-	# echo "'" >> "$TMPFILE"
+	echo "'" >> "$TMPFILE"
 	
-cat >> "$TMPFILE" << 'EOF'
-	--dpi-desync-repeats=11
-	'
-EOF
+# cat >> "$TMPFILE" << 'EOF'
+	# --dpi-desync-repeats=1
+	# '
+# EOF
 
 # --dpi-desync-fake-tls-mod=rnd,dupsid,sni=fonts.google.com
 # --dpi-desync-fooling=badsum
 
 	
     # Заменяем оригинальный файл
-    mv "$TMPFILE" /etc/config/zapret
-    echo "Конфигурация обновлена"
+    mv "$TMPFILE" /etc/config/zapret >/dev/null 2>&1
+    # echo "Конфигурация обновлена"
     
     # Запускаем zapret
-    sleep 1
-    echo "Запускаю zapret..."
+    printf "Запускаю zapret... "
     service zapret restart >/dev/null 2>&1
-	sleep 5
-    service zapret restart >/dev/null 2>&1
-   
-    sleep 2
-    if /etc/init.d/zapret status >/dev/null 2>&1; then
-        echo "Zapret успешно запущен с новой стратегией"
-		echo
-    else
+
+    if ! /etc/init.d/zapret status >/dev/null 2>&1; then
         echo "Предупреждение: zapret не запустился автоматически"
     fi
 } # strat_replace end
 
 
+# Аргументы: имя файла, в котором надо подсчитать количество строк
 strategy_counter() {
 
+	local FILE="$1"
 	# Подсчет количества строк в файле
-	if [ ! -f "$FINAL_FILE" ]; then
-		echo "Файл $FINAL_FILE не найден"
-		STRAT_COUNT=0
+	if [ ! -f "$FILE" ]; then
+		#echo "Файл $FILE не найден"
+		echo "0"
 	else
-		STRAT_COUNT=$(wc -l < "$FINAL_FILE") >/dev/null 2>&1
-		[ -z "$STRAT_COUNT" ] && STRAT_COUNT=0
+		wc -l <"$FILE"
 	fi
-	
 }
 
-
 # Функция подбора стратегий
-SCAN() {
+strategy_scan() {
 
 	# Останавливаем youtubeUnblock
 	echo "Останавливаем youtubeUnblock"
@@ -255,17 +246,94 @@ SCAN() {
     export MAX_QUICK_STRATEGIES
 	echo "Ищем стратегий: $MAX_QUICK_STRATEGIES"
     $BLOCKCHECK_SH 2>&1 | tee /tmp/resscan/raw.txt
+	rm /tmp/resscan/final.txt
 
     # Извлекаем стратегию
     awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
 
-    if [ ! -s /tmp/resscan/final.txt ]; then
+    if [ ! -s "/tmp/resscan/final.txt" ]; then
         echo "Ошибка: не удалось извлечь стратегию"
         exit 1
 	else
-		mv /tmp/resscan/final.txt /etc/final.txt
+		mv /tmp/resscan/final.txt "$FINDED_STRATEGY"
     fi
 	
+	# Запускаем zapret
+	/etc/init.d/zapret start >/dev/null 2>&1
+	
+}
+
+default_strategy() {
+
+cat > "$PRESET_STRATEGY" << 'EOF'
+--dpi-desync=multidisorder --dpi-desync-split-pos=2
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fake --dpi-desync-fooling=badsum
+--dpi-desync=fake --dpi-desync-fooling=badseq --dpi-desync-fake-tls=0x00000000 --dpi-desync-fake-tls=! --dpi-desync-fake-tls-mod=rnd,rndsni,dupsid
+--dpi-desync=fake --dpi-desync-fooling=datanoack --dpi-desync-fake-tls=0x00000000 --dpi-desync-fake-tls=! --dpi-desync-fake-tls-mod=rnd,rndsni,dupsid
+--dpi-desync=fake --dpi-desync-fooling=ts
+--dpi-desync=fake --dpi-desync-fooling=md5sig --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fakedsplit --dpi-desync-fooling=badsum --dpi-desync-split-pos=1
+--dpi-desync=fakedsplit --dpi-desync-fooling=badseq --dpi-desync-split-pos=1
+--dpi-desync=fakedsplit --dpi-desync-fooling=datanoack --dpi-desync-split-pos=1
+--dpi-desync=fakedsplit --dpi-desync-fooling=ts --dpi-desync-split-pos=1
+--dpi-desync=fakedsplit --dpi-desync-fooling=md5sig --dup=1 --dup-cutoff=n2 --dup-fooling=md5sig --dpi-desync-split-pos=1
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1
+--dpi-desync=hostfakesplit --dpi-desync-fooling=badsum
+--dpi-desync=hostfakesplit --dpi-desync-fooling=badseq --dpi-desync-badseq-increment=0
+--dpi-desync=hostfakesplit --dpi-desync-fooling=datanoack
+--dpi-desync=hostfakesplit --dpi-desync-fooling=ts
+--dpi-desync=hostfakesplit --dpi-desync-fooling=md5sig
+--dpi-desync=multisplit --dpi-desync-split-pos=10 --dpi-desync-split-seqovl=1
+--dpi-desync=multisplit --dpi-desync-split-pos=10,sniext+1 --dpi-desync-split-seqovl=1
+--dpi-desync=multisplit --dpi-desync-split-pos=10,sniext+4 --dpi-desync-split-seqovl=1
+--dpi-desync=multisplit --dpi-desync-split-pos=10,midsld --dpi-desync-split-seqovl=1
+--dpi-desync=multisplit --dpi-desync-split-pos=2 --dpi-desync-split-seqovl=336 --dpi-desync-split-seqovl-pattern=/opt/zapret/files/fake/tls_clienthello_iana_org.bin
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=-1 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=-2 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=-3 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=-4 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=fake --dpi-desync-ttl=1 --dpi-desync-autottl=-5 --dpi-desync-fake-tls-mod=rnd,dupsid,rndsni,padencap
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1 --dpi-desync-autottl=-1
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1 --dpi-desync-autottl=-2
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1 --dpi-desync-autottl=-3
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1 --dpi-desync-autottl=-4
+--dpi-desync=hostfakesplit --dpi-desync-ttl=1 --dpi-desync-autottl=-5
+--dpi-desync=syndata,multisplit --dpi-desync-split-pos=1
+EOF
+
+}
+
+
+google_hostname_entries() {
+
+if [ ! -d "/opt/zapret/ipset/" ]; then mkdir -p "/opt/zapret/ipset/" ; fi
+
+cat > "/opt/zapret/ipset/zapret-hosts-google.txt" << 'EOF'
+googlevideo.com
+youtubei.googleapis.com
+ytimg.com
+yt3.ggpht.com
+yt4.ggpht.com
+youtube.com
+youtubeembeddedplayer.googleapis.com
+ytimg.l.google.com
+jnn-pa.googleapis.com
+youtube-nocookie.com
+youtube-ui.l.google.com
+yt-video-upload.l.google.com
+wide-youtube.l.google.com
+youtu.be
+youtube.googleapis.com
+yt.be
+withyoutube.com
+youtubeeducation.com
+youtubefanfest.com
+youtubegaming.com
+youtubekids.com
+youtubemobilesupport.com
+EOF
+
 }
 
 # ФУНКЦИИ ЗАКОНЧИЛИСЬ, БОЛЬШЕ НЕ ПРИДУМАЛ
@@ -279,7 +347,17 @@ if ! opkg list-installed | grep -q "^zapret -"; then
         opkg update
 		OPKG_UPDATED=1
     fi
-	resurrection
+	delete_me
+fi
+
+# Чистим дефолтовый список гуглдоменов, их слишком до... 
+# и запрет адски тормозит при создании ipset
+google_hostname_entries
+
+# Проверяем /opt/zapret/ipset/zapret-hosts-user.txt на "не пустой"
+# Если пустой, вносим пару доменов.
+if [ ! -s /opt/zapret/ipset/zapret-hosts-user.txt ] || [ -z "$(grep -v '^[[:space:]]*$' /opt/zapret/ipset/zapret-hosts-user.txt)" ]; then
+  printf '%s\n%s\n' 'nonexistent.domain' 'speedtest.net' > /opt/zapret/ipset/zapret-hosts-user.txt
 fi
 
 # Устанавливаем всякое для поиска стратегий
@@ -321,6 +399,8 @@ if [ ! -f /opt/zapret/mdig/mdig ]; then
         echo "Ошибка: не удалось найти распакованные файлы zapret"
         exit 1
     fi
+	google_hostname_entries
+	default_strategy
 fi
 
 # Устанавливаем патченный blockcheck_patched.sh
@@ -354,26 +434,29 @@ mkdir -p /tmp/resscan
 
 # ОСНОВНОЙ КОД
 
-while true; do # SCAN loop
+while true; do # strategy_scan loop
+
 	while true; do	# Меню loop
 		# Выводим меню
 		clear
-		strategy_counter
-		echo "$VERSION
+		echo "$VERSION"
+		echo
+		echo "1 - Ищем стратегии" 
+		RETVAL=$( strategy_counter "$FINDED_STRATEGY" )
+		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
+		RETVAL=$(strategy_counter "$PRESET_STRATEGY")
+		echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
+		echo "4 - Изменить количество итоговых стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES"
+		echo
+		echo "0 - Выход"
+		echo "00 - Верни как было до установки этого барахла!"
 
-1 - Ищем стратегии
-2 - Применяем ранее найденные стратегии. Сейчас: $STRAT_COUNT
-3 - Изменить количество итоговых стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES
-
-0 - Выход
-00 - Верни как было до установки этого барахла!
-"
 		printf "> "
 		read -r idx
 		case $idx in
 			00)
 				echo; echo "Удаляемсу, нащяяяльникамана..."
-				resurrection
+				delete_me
 				echo
 				echo "КОНЕЦ"
 				echo				
@@ -384,31 +467,39 @@ while true; do # SCAN loop
 				exit 0
 				;;
 			1)  
-				FILE=""
-				rm "/etc/final.txt"
-				SCAN
+				# FILE=""
+				rm "$FINDED_STRATEGY"
+				strategy_scan
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
 				# exit
 				;;
-			2) 
-				if [ -f "/etc/final.txt" ]; then
-					echo "Файл со стратегиями найден."
-					FILE="/etc/final.txt"
+			2) 	
+				STRAT_COUNT=$(strategy_counter "$FINDED_STRATEGY")
+				if [ $STRAT_COUNT -gt 0 ]; then
+					FILE="$FINDED_STRATEGY"
 					break
-				else
-					echo "Файл со стратегиями не найден. Выберите 1 для запуска сканирования."
-					sleep 5
+				echo "Файл "$FINDED_STRATEGY" с найденными стратегиями отсутствует, или пуст."
 				fi
 				;;
-			3) 
+			3)
+				# Перебор предустановленных стратегий
+				STRAT_COUNT=$(strategy_counter "$PRESET_STRATEGY")
+				if [ $STRAT_COUNT -gt 0 ]; then
+					FILE="$PRESET_STRATEGY"
+					break
+				echo "Файл "$PRESET_STRATEGY" с предустановленными стратегиями отсутствует, или пуст."
+				fi
+				
+				;;
+			4) 
 				# Сколько стратегий найти
-				printf "Новое количество рабочих стратегий: "
+				printf "Новое количество рабочих стратегий = "
 				read -r idx
-				MAX_QUICK_STRATEGIES="$idx"
+				case $idx in ''|*[!0-9]*) echo "";; *) MAX_QUICK_STRATEGIES="$idx";; esac
 				;;
 			*)
-				printf "Некорректный ввод. Повторите попытку."
+				echo "Некорректный ввод. Повторите попытку."
 				sleep 2
 				;;
 		esac
@@ -416,10 +507,8 @@ while true; do # SCAN loop
 
 	# if [ -z "$FILE" ]; then
 		# echo "Запускаю поиск стратегий..."
-		# SCAN # Вызываем основную функцию поиска
+		# strategy_scan # Вызываем основную функцию поиска
 	# fi
-	
-	strategy_counter
 
 	# Если файл пустой
 	if [ "$STRAT_COUNT" -eq 0 ]; then
@@ -427,7 +516,7 @@ while true; do # SCAN loop
 		exit 1
 	fi
 
-	# Основной цикл по строкам файла
+	# Цикл проверки стратегий
 	i=1
 	while [ "$i" -le "$STRAT_COUNT" ]; do
 		# Чтение строки по номеру
@@ -448,62 +537,42 @@ while true; do # SCAN loop
 		
 		# Применяем стратегию
 		strat_replace "$STRAT"
+		sleep 1
 		# service network restart
 		# service dnsmasq restart
-		echo "Проверьте доступ к Ютуб. 1 - Доступ получен. 0 - Нет доступа."
-		printf "> "
 		
-		# Ожидание ответа пользователя
-		while true; do
-			read -r answer
-			case $answer in
-				1)
-					echo "Доступ получен. Сохраняем стратегию и выходим."
-					echo "$STRAT" > /etc/zapret_success_strategy.txt
-					exit 0
-					;;
-				0)
-					echo "Доступ отсутствует. Пробуем следующую стратегию..."
-					break
-					;;
-				*)
-					echo "Проверьте доступ к Ютуб. 1 - Доступ получен. 0 - Нет доступа."
-					printf "> "
-					;;
-			esac
-		done
+		TLS12=0; TLS13=0
+		# Тестируем подключение к ютубу
+		if curl --tls-max 1.2 --max-time 3 -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
+			printf "\033[32m1.2✓ \033[0m "
+			TLS12=1
+		else 
+			printf "\033[31m1.2✗ \033[0m"
+		fi
 		
-		i=$((i + 1))
-	done
-
-	# Если все итерации завершились с ответом 0
-	echo "На все стратегии получен ответ 0"
-	echo "Повторить поиск стратегий? (Y/n)"
-
-	while true; do
-		read -r response
-		response="${response:-Y}" # Значение по умолчанию Y
+ 		if curl --tlsv1.3 --max-time 3 -s -o /dev/null "$TEST_URL" 2>/dev/null; then
+			printf "\033[32m1.3✓ \033[0m "
+			TLS13=1
+		else
+			printf "\033[31m1.3✗ \033[0m"; 
+		fi
 		
-		case $response in
-			[Yy]*)
-				MAX_QUICK_STRATEGIES=$((STRAT_COUNT + 5))
-				echo "Переменная MAX_QUICK_STRATEGIES установлена в: $MAX_QUICK_STRATEGIES"
-				export MAX_QUICK_STRATEGIES
-				rm -f /etc/final.txt
-				SCAN
-				if [ $? -eq 0 ]; then
-					# Перезапускаем скрипт с новыми стратегиями
-					exec "$0"
-				fi
-				exit 0
+		case $((TLS12 + TLS13)) in
+			0)
+				printf "Нерабочая стратегия." 
 				;;
-			[Nn]*)
-				echo "Выход из скрипта."
-				exit 0
+			1) 
+				printf "${YELLOW}Частично рабочая стратегия.${NC}" 
 				;;
-			*)
-				echo "Введите Y или N:"
+			2)
+				echo -e "${GREEN}НАЙДЕНА ПОЛНОСТЬЮ РАБОЧАЯ СТРАТЕГИЯ!${NC}"
+				# echo "$STRAT" > /etc/zapret_autoconfig/zapret_success_strategy.txt
+				echo "Проверяйте доступ к Ютуб. Всё нормально - 1. Не пашет - 0."
+				printf "1 или 0 > "
+				read -r answer
+				case $answer in 1) break ;; *) echo "Продолжение тестирования" ;; esac
 				;;
 		esac
+		i=$((i + 1))
 	done
 done
