@@ -59,7 +59,7 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
 MAX_QUICK_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.0 (test version)"
+VERSION="zapret_autoconfig v0.0.1 (test version)"
 TEST_ADDRESS="rr3---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
 FINDED_STRATEGY="/etc/zapret_autoconfig/finded_strategy.txt" # Файл, в котором хранятся найденные стратегии
