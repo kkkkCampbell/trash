@@ -1,6 +1,6 @@
 #!/bin/sh
 # zapret_autoconfig
-exit 1
+
 ############################################################
 
 # Быстрый поиск 3 стратегий
@@ -24,64 +24,65 @@ BLUE='\033[0;34m'      # Синий
 NC='\033[0m'           # Нет цвета (сброс к нормальному)
 
 
-# Собираем информацию о состоянии сервисов на момент первого запуска.
-if [ ! -f /etc/zapret_autoconfig/services_state.sh ]; then
-
-echo "#!/bin/ash" > /etc/zapret_autoconfig/services_state.sh
-
-# Проверяем каждый сервис
-for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
-    if /etc/init.d/"$serv" enabled 2>/dev/null; then
-			echo "service $serv enable" >> /etc/zapret_autoconfig/services_state.sh
-		else
-			echo "service $serv disable" >> /etc/zapret_autoconfig/services_state.sh
-		fi
-		
-		if /etc/init.d/"$serv" running 2>/dev/null; then
-			echo "service $serv start" >> /etc/zapret_autoconfig/services_state.sh
-		else
-			echo "service $serv stop" >> /etc/zapret_autoconfig/services_state.sh
-    fi
-done
-
-
 # Проверяем sing-box и если запущен, добавляем команды для podkop
 if /etc/init.d/sing-box running 2>/dev/null; then
     echo "service podkop restart" >> /etc/zapret_autoconfig/services_state.sh
     echo "service podkop enable" >> /etc/zapret_autoconfig/services_state.sh
 fi
 
-# Выводим содержимое файла на экран
-# cat /etc/zapret_autoconfig/services_state.sh
-fi
+# Настоятельно рекомендуем сделать бэкап
+# Выводится при каждой инсталляции при условии ранее проведённой корректной деинсталляции
+if [ ! -f "/opt/zapret/already_installed" ]; then
 
-clear
-echo
-tempname="/etc/zapret_autoconfig/backup/config_zapret_$(date +'%Y-%m-%d_%H-%M-%S')"
-mkdir -p /etc/zapret_autoconfig/backup
-cp -f /etc/config/zapret "$tempname"
-echo "$tempname" >/etc/zapret_autoconfig/uninstall
+	# Собираем информацию о состоянии сервисов на момент первого запуска.
+	echo "#!/bin/ash
+	" > /etc/zapret_autoconfig/services_state.sh
 
-echo "Архивная копия конфигурации запрета сохранена в"
-echo
-echo -e "${YELLOW}$tempname${NC}"
-echo
-echo "При корректном удалении (по 00) будет восстановлена именно она."
-echo -e "
+	# Проверяем каждый сервис
+	for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
+		if /etc/init.d/"$serv" enabled 2>/dev/null; then
+				echo "service $serv enable" >> /etc/zapret_autoconfig/services_state.sh
+			else
+				echo "service $serv disable" >> /etc/zapret_autoconfig/services_state.sh
+			fi
+			
+			if /etc/init.d/"$serv" running 2>/dev/null; then
+				echo "service $serv start" >> /etc/zapret_autoconfig/services_state.sh
+			else
+				echo "service $serv stop" >> /etc/zapret_autoconfig/services_state.sh
+		fi
+	done
+	# Выводим содержимое файла на экран
+	# cat /etc/zapret_autoconfig/services_state.sh
+	
+	# Делаем архивную копию конфига запрета
+	clear
+	echo
+	tempname="/etc/zapret_autoconfig/backup/config_zapret_$(date +'%Y-%m-%d_%H-%M-%S')"
+	mkdir -p /etc/zapret_autoconfig/backup
+	cp -f /etc/config/zapret "$tempname"
+	echo "$tempname" >/etc/zapret_autoconfig/uninstall
+
+	echo "Архивная копия конфигурации запрета сохранена в"
+	echo
+	echo -e "${YELLOW}$tempname${NC}"
+	echo
+	echo "При корректном удалении (по 00) будет восстановлена именно она."
+	echo -e "
 В директории ${YELLOW}/etc/zapret_autoconfig/backup/${NC} хранятся ВСЕ архивные копии конфигурации zapret, созданные при каждой ИНСТАЛЛЯЦИИ скрипта.
 Вы можете их восстановить самостоятельно при необходимости."
-echo "
+	echo "
 САМОЕ ВРЕМЯ СОЗДАТЬ АРХИВНУЮ КОПИЮ НАСТРОЕК РОУТЕРА!"
-echo
-echo -e "${GREEN}Для продолжения установки нажмите любую клавишу...${NC}"
-read foo
+	echo
+	echo -e "${GREEN}Для продолжения установки нажмите любую клавишу...${NC}"
+	read foo
+	printf "${YELLOW}АРХИВНАЯ КОПИЯ НАСТРОЕК РОУТЕРА СОЗДАНА? Y - Да. N - Нет. >${NC}"
+	read foo
+	case "$foo" in
+	  [Nn]) exit 0 ;;
+	esac
+fi
 
-printf "${YELLOW}АРХИВНАЯ КОПИЯ НАСТРОЕК РОУТЕРА СОЗДАНА? Y - Да. N - Нет. >${NC}"
-read foo
-case "$foo" in
-  [Nn]) exit 0 ;;
-esac
- 
 # Останавливаем youtubeUnblock
 echo "Останавливаем youtubeUnblock"
 service youtubeUnblock stop >/dev/null 2>&1
@@ -375,12 +376,9 @@ if ! opkg list-installed | grep -q "^zapret -"; then
         opkg update
 		OPKG_UPDATED=1
     fi
-	delete_me
+	# delete_me
+	opkg install zapret luci-app-zapret
 fi
-
-# Чистим дефолтовый список гуглдоменов, их слишком до... 
-# и запрет адски тормозит при создании ipset
-google_hostname_entries
 
 # Проверяем /opt/zapret/ipset/zapret-hosts-user.txt на "не пустой"
 # Если пустой, вносим пару доменов.
@@ -429,6 +427,7 @@ if [ ! -f /opt/zapret/mdig/mdig ]; then
     fi
 	google_hostname_entries
 	default_strategy
+	touch /opt/zapret/already_installed
 fi
 
 # Устанавливаем патченный blockcheck_patched.sh
