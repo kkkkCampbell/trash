@@ -97,8 +97,12 @@ OPKG_UPDATED=0
 BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
 MAX_QUICK_STRATEGIES=5
 VERSION="zapret_autoconfig v0.0.2 (test version)"
+
 TEST_ADDRESS="rr3---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
+USER_AGENT=${USER_AGENT:-Mozilla}
+CHECK_TIMEOUT=1
+
 FINDED_STRATEGY="/etc/zapret_autoconfig/finded_strategy.txt" # Файл, в котором хранятся найденные стратегии
 PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в котором хранятся дефолтовые стратегии
 # Получаем имя скрипта и путь до скрипта
@@ -267,6 +271,7 @@ strategy_scan() {
 	service youtubeUnblock disable >/dev/null 2>&1
 
 	# Останавливаем zapret
+	echo "Останавливаем zapret"
 	/etc/init.d/zapret stop >/dev/null 2>&1
 	sleep 1
 	killall nfqws >/dev/null 2>&1
@@ -275,7 +280,7 @@ strategy_scan() {
     export MAX_QUICK_STRATEGIES
 	echo "Ищем стратегий: $MAX_QUICK_STRATEGIES"
     $BLOCKCHECK_SH 2>&1 | tee /tmp/resscan/raw.txt
-	rm /tmp/resscan/final.txt
+	rm /tmp/resscan/final.txt >/dev/null 2>&1
 
     # Извлекаем стратегию
     awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
@@ -469,7 +474,7 @@ while true; do # strategy_scan loop
 		echo "$VERSION"
 		echo
 		echo "1 - Ищем стратегии" 
-		RETVAL=$( strategy_counter "$FINDED_STRATEGY" )
+		RETVAL=$(strategy_counter "$FINDED_STRATEGY")
 		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
 		RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
@@ -546,6 +551,19 @@ while true; do # strategy_scan loop
 	fi
 
 	# Цикл проверки стратегий
+	foo=0
+	echo
+	echo -e "${RED}!!!_${YELLOW}ВНИМАНИЕ${RED}_!!!${NC}"
+	echo -e "${RED}!!!_${YELLOW}ВНИМАНИЕ${RED}_!!!${NC}"
+	echo -e "${RED}!!!_${YELLOW}ВНИМАНИЕ${RED}_!!!${NC}"
+	echo
+	echo -e "${YELLOW}Проверка стратегий автоматически заменяет конфигурацию zapret. Сделайте архивную копию!${NC}"
+	printf "Запустить проверку стратегий? 1 - Да. 0 - Нет. > "
+	read foo
+	if [ -z "$foo" ] || [ "$foo" -ne 1 ]; then
+	  exit 1
+	fi
+	
 	i=1
 	while [ "$i" -le "$STRAT_COUNT" ]; do
 		# Чтение строки по номеру
@@ -561,25 +579,24 @@ while true; do # strategy_scan loop
 		fi
 		
 		echo
-		printf "Применяем стратегию $i из $STRAT_COUNT: "
-		echo -e "${GREEN}$STRAT${NC}"
+		echo " Применяем стратегию $i из $STRAT_COUNT"
+		[ "$STRAT_COUNT" -gt 9 ] && printf "="
+		echo "============================"
+		# echo -e "${GREEN}$STRAT${NC}"
 		
 		# Применяем стратегию
 		strat_replace "$STRAT"
-		sleep 1
-		# service network restart
-		# service dnsmasq restart
-		
+
+		# Тестируем подключение к ютубу		
 		TLS12=0; TLS13=0
-		# Тестируем подключение к ютубу
-		if curl --tlsv1.2 --max-time 1 -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
+		if curl --tlsv1.2 --max-time $CHECK_TIMEOUT --user-agent  "$USER_AGENT" -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
 			printf "\033[32m1.2✓ \033[0m "
 			TLS12=1
 		else 
 			printf "\033[31m1.2✗ \033[0m"
 		fi
 		
- 		if curl --tlsv1.3 --max-time 1 -s -o /dev/null "$TEST_URL" 2>/dev/null; then
+ 		if curl --tlsv1.3 --max-time $CHECK_TIMEOUT --user-agent "$USER_AGENT" -s -o /dev/null "$TEST_URL" 2>/dev/null; then
 			printf "\033[32m1.3✓ \033[0m "
 			TLS13=1
 		else
@@ -596,8 +613,8 @@ while true; do # strategy_scan loop
 			2)
 				echo -e "${GREEN}НАЙДЕНА ПОЛНОСТЬЮ РАБОЧАЯ СТРАТЕГИЯ!${NC}"
 				# echo "$STRAT" > /etc/zapret_autoconfig/zapret_success_strategy.txt
-				echo "Проверяйте доступ к Ютуб. Всё нормально - 1. Не пашет - 0."
-				printf "1 или 0 > "
+				echo "Проверяйте доступ к Ютуб. Всё нормально - 1. Не пашет - 0 или Enter."
+				printf "Введите 1 или 0 > "
 				read -r answer
 				case $answer in 1) break ;; *) echo "Продолжение тестирования" ;; esac
 				;;
