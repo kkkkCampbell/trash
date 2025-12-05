@@ -572,7 +572,7 @@ while true; do # strategy_scan loop
 		
 		TLS12=0; TLS13=0
 		# Тестируем подключение к ютубу
-		if curl --tls-max 1.2 --max-time 1 -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
+		if curl --tlsv1.2 --max-time 1 -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
 			printf "\033[32m1.2✓ \033[0m "
 			TLS12=1
 		else 
