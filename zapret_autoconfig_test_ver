@@ -96,7 +96,7 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=/opt/zapret/blockcheck_patched.sh
 MAX_QUICK_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.2 (test version)"
+VERSION="zapret_autoconfig v0.0.3 (test version)"
 
 TEST_ADDRESS="rr3---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
@@ -108,6 +108,7 @@ PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в ко
 # Получаем имя скрипта и путь до скрипта
 SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
 SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
+CONFIG_NE_TROGAI=0
 
 
 echo $VERSION
@@ -115,13 +116,18 @@ echo $VERSION
 
 # ФУНКЦИИ
 
+
+
 delete_me() {
 
 	# Удаляем модули подбора стратегии
 
+if [ $CONFIG_NE_TROGAI -ne 1 ]; then 
 	file=$(find /opt/backup/zapret -type f -exec ls -lt {} + | tail -n 1 | awk '{print $NF}')
 	echo "Восстанавливаем конфигурацию zapret"
 	if [ -n "$file" ]; then mv "$file" /etc/config/zapret; fi
+fi	
+	
 	echo
 	echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
 	echo
@@ -129,8 +135,24 @@ delete_me() {
 	if [ -f "/opt/zapret/uninstall_easy.sh" ]; then 
 		sh /opt/zapret/uninstall_easy.sh
 	fi
-	echo
-
+	
+	# echo "
+	# Будут удалены:
+	# git-http
+	# git
+	# bind-dig
+	# "
+	# while true; do
+		# printf "Удалить? 1 - Да. 0 - Нет. >" 
+		# read foo
+		# case "$foo" in
+		  # 1)
+	opkg remove git-http
+	opkg remove git
+	opkg remove bind-dig
+		  # ;;
+		# esac
+	# done
 	# Переустанавливаем запрет
 	echo "Переустанавливаем zapret."
 	rm -r /opt/zapret >/dev/null 2>&1
@@ -482,6 +504,7 @@ while true; do # strategy_scan loop
 		echo
 		echo "0 - Выход"
 		echo "00 - Верни как было до установки этого барахла!"
+		echo "335 - удаление пакетов для поиска стратегий с сохранением стратегии"
 		echo
 		printf "Введите номер пункта меню > "
 		read -r idx
@@ -492,7 +515,9 @@ while true; do # strategy_scan loop
 				first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
 				cp -f "$first_line" /etc/config/zapret
 				echo
+				echo
 				echo "КОНЕЦ"
+				echo
 				echo				
 				exit 0
 				;;
@@ -502,7 +527,7 @@ while true; do # strategy_scan loop
 				;;
 			1)  
 				# FILE=""
-				rm "$FINDED_STRATEGY"
+				rm "$FINDED_STRATEGY" >/dev/null 2>&1
 				strategy_scan
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
@@ -532,17 +557,16 @@ while true; do # strategy_scan loop
 				read -r idx
 				case $idx in ''|*[!0-9]*) echo "";; *) MAX_QUICK_STRATEGIES="$idx";; esac
 				;;
+			335) 
+				CONFIG_NE_TROGAI=1
+				delete_me
+				;;
 			*)
 				echo "Некорректный ввод. Повторите попытку."
 				sleep 1
 				;;
 		esac
 	done
-
-	# if [ -z "$FILE" ]; then
-		# echo "Запускаю поиск стратегий..."
-		# strategy_scan # Вызываем основную функцию поиска
-	# fi
 
 	# Если файл пустой
 	if [ "$STRAT_COUNT" -eq 0 ]; then
