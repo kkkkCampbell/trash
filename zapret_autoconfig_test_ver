@@ -560,6 +560,7 @@ while true; do # strategy_scan loop
 			335) 
 				CONFIG_NE_TROGAI=1
 				delete_me
+				exit 0
 				;;
 			*)
 				echo "Некорректный ввод. Повторите попытку."
