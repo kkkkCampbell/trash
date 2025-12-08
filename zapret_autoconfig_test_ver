@@ -41,36 +41,60 @@ PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в ко
 # Получаем имя скрипта и путь до скрипта
 SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
 SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
-CONFIG_NE_TROGAI=0
+FULLDELETE=0
+
+
 
 # Выводится при каждой инсталляции при условии ранее проведённой корректной деинсталляции
+
 if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
-	
+
+
 	mkdir -p /etc/zapret_autoconfig/backup
 	# Собираем информацию о состоянии сервисов на момент первого запуска.
 	echo "#!/bin/ash
-	" > /etc/zapret_autoconfig/services_state.sh
+	" > /etc/zapret_autoconfig/restore_services_state.sh
+	
+	# Если запрет установлен, формируем команду на переустановку
+	if opkg list-installed zapret | grep -q zapret > /dev/null 2>&1; then
+		echo "
+echo Переустанавливаем zapret.
+echo
+opkg update
+echo
+opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
+echo
+echo Запрет, вроде, переустановлен.
+echo
+echo" >> /etc/zapret_autoconfig/restore_services_state.sh
+	else 
+		echo "
+opkg remove zapret luci-app-zapret zapret >/dev/null 2>&1
+rm -r /opt/zapret" >> /etc/zapret_autoconfig/restore_services_state.sh	
+	fi
 
 	# Проверяем каждый сервис
 	for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
+		if /etc/init.d/"$serv" running 2>/dev/null; then
+			echo "service $serv start" >> /etc/zapret_autoconfig/restore_services_state.sh
+		else
+			echo "service $serv stop" >> /etc/zapret_autoconfig/restore_services_state.sh
+		fi
+		
 		if /etc/init.d/"$serv" enabled 2>/dev/null; then
-				echo "service $serv enable" >> /etc/zapret_autoconfig/services_state.sh
+				echo "service $serv enable" >> /etc/zapret_autoconfig/restore_services_state.sh
 			else
-				echo "service $serv disable" >> /etc/zapret_autoconfig/services_state.sh
-			fi
-			
-			if /etc/init.d/"$serv" running 2>/dev/null; then
-				echo "service $serv start" >> /etc/zapret_autoconfig/services_state.sh
-			else
-				echo "service $serv stop" >> /etc/zapret_autoconfig/services_state.sh
+				echo "service $serv disable" >> /etc/zapret_autoconfig/restore_services_state.sh
 		fi
 	done
-	
+
 	# Проверяем sing-box и если запущен, добавляем команды для podkop
 	if /etc/init.d/sing-box running 2>/dev/null; then
-		echo "service podkop restart" >> /etc/zapret_autoconfig/services_state.sh
-		echo "service podkop enable" >> /etc/zapret_autoconfig/services_state.sh
+		echo "service podkop restart" >> /etc/zapret_autoconfig/restore_services_state.sh
+		echo "service podkop enable" >> /etc/zapret_autoconfig/restore_services_state.sh
 	fi	
+
+
 	
 	# Делаем архивную копию конфига запрета
 	clear
@@ -114,14 +138,11 @@ echo $VERSION
 
 
 delete_me() {
-
 	# Удаляем модули подбора стратегии
 	
-	rm $ZAPRET_BASE_DIR/already_installed
 	echo
 	echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
 	echo
-	
 	echo "Запускаем штатный деинсталлятор $ZAPRET_BASE_DIR/uninstall_easy.sh"
 	sh $ZAPRET_BASE_DIR/uninstall_easy.sh
 
@@ -129,24 +150,25 @@ delete_me() {
 	opkg remove git
 	opkg remove bind-dig
 
-	# Переустанавливаем запрет
-	echo
-	echo "Переустанавливаем zapret."
-	# rm -r $ZAPRET_BASE_DIR >/dev/null 2>&1
-	rm -r /opt/backup/zapret >/dev/null 2>&1
-	opkg remove zapret luci-app-zapret >/dev/null 2>&1
-	if [ "$OPKG_UPDATED" -ne 1 ]; then opkg update; fi
-	opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
-	echo
-	echo "Запрет, вроде, переустановлен."
-	echo
 
-	if [ $CONFIG_NE_TROGAI -eq 0 ]; then
-		sh $ZAPRET_BASE_DIR/def-cfg.sh
-		sh /etc/zapret_autoconfig/services_state.sh
+	if [ $FULLDELETE -eq 1 ]; then # если выбрано полное удаление
+		sh "/etc/zapret_autoconfig/restore_services_state.sh" # восстанавливаем состояние сервисов
+		sh "$ZAPRET_BASE_DIR/restore-def-cfg.sh" # восстанавливаем стандартный конфиг zapret
+		# Восстанавливаем config zapret если есть бэкап
+		first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
+		cp -f "$first_line" /etc/config/zapret
+		rm "/etc/zapret_autoconfig/finded_strategy.txt"
+		rm "/etc/zapret_autoconfig/preset_strategy.txt"
+		rm "/etc/zapret_autoconfig/uninstall"
+		rm "/etc/zapret_autoconfig/restore_services_state.sh"
+		rm $ZAPRET_BASE_DIR/already_installed
+	else
+		echo Переустанавливаем zapret.
+		opkg install --force-reinstall --force-maintainer zapret luci-app-zapret zapret >/dev/null 2>&1
+		echo
+		echo "Запрет, вроде, переустановлен."
 	fi	
-	rm /etc/zapret_autoconfig/services_state.sh
-	sh $ZAPRET_BASE_DIR/sync_config.sh
+	sh "$ZAPRET_BASE_DIR/sync_config.sh"
 }
 
 backup_zapret() {
@@ -495,11 +517,8 @@ while true; do # strategy_scan loop
 		case $idx in
 			00)
 				echo; echo "Удаляемсу, нащяяяльникамана..."
-				CONFIG_NE_TROGAI=0
+				FULLDELETE=1
 				delete_me
-				first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
-				cp -f "$first_line" /etc/config/zapret
-				service zapret restart > /dev/null
 				echo
 				echo
 				echo "КОНЕЦ"
@@ -544,7 +563,7 @@ while true; do # strategy_scan loop
 				case $idx in ''|*[!0-9]*) echo "";; *) MAX_QUICK_STRATEGIES="$idx";; esac
 				;;
 			335) 
-				CONFIG_NE_TROGAI=1
+				FULLDELETE=0
 				delete_me
 				exit 0
 				;;
@@ -628,8 +647,8 @@ while true; do # strategy_scan loop
 			2)
 				echo -e "${GREEN}НАЙДЕНА ПОЛНОСТЬЮ РАБОЧАЯ СТРАТЕГИЯ!${NC}"
 				# echo "$STRAT" > /etc/zapret_autoconfig/zapret_success_strategy.txt
-				echo "Проверяйте доступ к Ютуб. Всё нормально - 1. Не пашет - 0 или Enter."
-				printf "Введите 1 или 0 > "
+				echo "Проверяйте доступ к Ютуб."
+				printf "Всё нормально - 1. Не пашет - Enter. > "
 				read -r answer
 				case $answer in 1) break ;; *) echo "Продолжение тестирования" ;; esac
 				;;
