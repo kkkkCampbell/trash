@@ -49,7 +49,6 @@ FULLDELETE=0
 
 if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
 
-
 	mkdir -p /etc/zapret_autoconfig/backup
 	# Собираем информацию о состоянии сервисов на момент первого запуска.
 	echo "#!/bin/ash
@@ -94,8 +93,6 @@ rm -r /opt/zapret" >> /etc/zapret_autoconfig/restore_services_state.sh
 		echo "service podkop enable" >> /etc/zapret_autoconfig/restore_services_state.sh
 	fi	
 
-
-	
 	# Делаем архивную копию конфига запрета
 	clear
 	echo
@@ -164,7 +161,7 @@ delete_me() {
 		rm $ZAPRET_BASE_DIR/already_installed
 	else
 		echo Переустанавливаем zapret.
-		opkg install --force-reinstall --force-maintainer zapret luci-app-zapret zapret >/dev/null 2>&1
+		opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
 		echo
 		echo "Запрет, вроде, переустановлен."
 	fi	
@@ -400,16 +397,6 @@ EOF
 # Архивируем текущий конфиг запрета
 backup_zapret
 
-# Устанавливаем zapret, если он не установлен
-if ! opkg list-installed | grep -q "^zapret -"; then
-    if [ "$OPKG_UPDATED" -ne 1 ]; then 
-        opkg update
-		OPKG_UPDATED=1
-    fi
-	# delete_me
-	opkg install zapret luci-app-zapret
-fi
-
 # Проверяем $ZAPRET_BASE_DIR/ipset/zapret-hosts-user.txt на "не пустой"
 # Если пустой, вносим пару доменов.
 if [ ! -s $ZAPRET_BASE_DIR/ipset/zapret-hosts-user.txt ] || [ -z "$(grep -v '^[[:space:]]*$' $ZAPRET_BASE_DIR/ipset/zapret-hosts-user.txt)" ]; then
@@ -427,45 +414,55 @@ if [ ! -f $ZAPRET_BASE_DIR/already_installed ]; then
     service zapret stop >/dev/null 2>&1
     if [ $OPKG_UPDATED -ne 1 ]; then
 		opkg update
+		OPKG_UPDATED=1
 	fi
 	
-	opkg install curl ipset git bind-dig git-http libcurl jq
-    
-    # Создаем /opt если нет
-    mkdir -p /opt
-    
-    cd /opt || exit 1
-    
-    # Скачиваем и распаковываем zapret
-    wget -q $(curl -s https://api.github.com/repos/bol-van/zapret/releases/latest | jq -r '.assets[] | select(.name | contains("openwrt")) | .browser_download_url') -O $ZAPRET_BASE_DIR-latest.tar.gz
-    tar -xvzf $ZAPRET_BASE_DIR-latest.tar.gz
-    rm -v $ZAPRET_BASE_DIR-latest.tar.gz
-    
-    # Находим распакованную директорию
-    zapret_dir=$(find /opt -maxdepth 1 -type d -name "zapret-v*" | head -1)
-    if [ -n "$zapret_dir" ]; then
-        mkdir -p $ZAPRET_BASE_DIR
-        cp -vr "$zapret_dir"/* $ZAPRET_BASE_DIR/
-        rm -rfv "$zapret_dir"
-        
-        cd $ZAPRET_BASE_DIR || exit 1
-        #./install_bin.sh
-        #./install_prereq.sh
-        ./install_easy.sh
-		echo "speedtest.net" >>"$ZAPRET_BASE_DIR/ipset/zapret-hosts-user.txt"
-    else
-        echo "Ошибка: не удалось найти распакованные файлы zapret"
-        exit 1
-    fi
+	opkg install curl ipsetlibcurl jq
+	# opkg install curl ipset git bind-dig git-http libcurl jq
+	
+	mkdir -p /opt/zapret
+	cd /opt
+	wget $(curl -s https://api.github.com/repos/bol-van/zapret/releases/latest  | jq -r '.assets[] | select(.name | contains ("openwrt")) | .browser_download_url') -O /opt/zapret-latest.tar.gz
+	tar -xvzf /opt/zapret-latest.tar.gz
+	rm -v /opt/zapret-latest.tar.gz
+	cp -vr /opt/zapret-v*/* /opt/zapret/
+	rm -rfv zapret-v*
+	cd /opt/zapret
+	./install_bin.sh
+	./install_prereq.sh
+	echo "speedtest.net" >>"$ZAPRET_BASE_DIR/ipset/zapret-hosts-user.txt"
+
 	google_hostname_entries
 	default_strategy
 	touch $ZAPRET_BASE_DIR/already_installed
+	
+	# # Чистим систему от лишнего
+	sh $ZAPRET_BASE_DIR/uninstall_easy.sh
+	opkg remove git-http
+	opkg remove git
+	opkg remove bind-dig
+	
+	# Устанавливаем запрет
+	echo
+	echo "Устанавливаем запрет"
+	echo
+	if [ "$OPKG_UPDATED" -ne 1 ]; then 
+			opkg update
+			OPKG_UPDATED=1
+	fi
+
+	#opkg --force-removal-of-dependent-packages --autoremove remove luci-app-zapret
+	#opkg --force-removal-of-dependent-packages --autoremove remove zapret
+	#sleep 1
+	opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
+
 fi
 
 # Устанавливаем патченный blockcheck_patched.sh
 echo "Устанавливаем патченный blockcheck_patched.sh"
 wget -O /tmp/blockcheck_patched.sh https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/zapret_autoconfig/blockcheck_patched.sh >/dev/null 2>&1
 RETVAL=$?
+
 if [ $RETVAL -ne 0 ]; then
     echo "Не удалось скачать скрипт."
 	printf "Проверяем наличие ранее скачанного файла...  "
@@ -488,7 +485,7 @@ mkdir -p /tmp/resscan
 
 # ОСНОВНОЙ КОД
 
-uci set firewall.@defaults[0].flow_offloading='1'
+# uci set firewall.@defaults[0].flow_offloading='1'
 uci set firewall.@defaults[0].flow_offloading_hw='1'
 uci commit firewall
 service firewall restart
@@ -510,7 +507,7 @@ while true; do # strategy_scan loop
 		echo
 		echo "0 - Выход"
 		echo "00 - Верни как было до установки этого барахла!"
-		echo "335 - Удаление пакетов для поиска стратегий с сохранением стратегии"
+		# echo "335 - Очистка. Убрать лишнее с сохранением работоспособности."
 		echo
 		printf "Введите номер пункта меню > "
 		read -r idx
