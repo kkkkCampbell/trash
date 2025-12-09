@@ -38,6 +38,7 @@ CHECK_TIMEOUT=1
 
 FINDED_STRATEGY="/etc/zapret_autoconfig/finded_strategy.txt" # Файл, в котором хранятся найденные стратегии
 PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в котором хранятся дефолтовые стратегии
+
 # Получаем имя скрипта и путь до скрипта
 SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
 SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
@@ -75,13 +76,13 @@ if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
 
 	# Проверяем каждый сервис
 	for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
-		if /etc/init.d/"$serv" running 2>/dev/null; then
+		if /etc/init.d/"$serv" running > /dev/null 2>&1; then
 			echo "service $serv start" >> /etc/zapret_autoconfig/restore_services_state.sh
 		else
 			echo "service $serv stop" >> /etc/zapret_autoconfig/restore_services_state.sh
 		fi
 		
-		if /etc/init.d/"$serv" enabled 2>/dev/null; then
+		if /etc/init.d/"$serv" enabled >/dev/null 2>&1; then
 				echo "service $serv enable" >> /etc/zapret_autoconfig/restore_services_state.sh
 			else
 				echo "service $serv disable" >> /etc/zapret_autoconfig/restore_services_state.sh
@@ -89,7 +90,7 @@ if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
 	done
 
 	# Проверяем sing-box и если запущен, добавляем команды для podkop
-	if /etc/init.d/sing-box running 2>/dev/null; then
+	if /etc/init.d/sing-box running >/dev/null 2>&1; then
 		echo "service podkop restart" >> /etc/zapret_autoconfig/restore_services_state.sh
 		echo "service podkop enable" >> /etc/zapret_autoconfig/restore_services_state.sh
 	fi	
@@ -155,9 +156,9 @@ delete_me() {
 		sh "$ZAPRET_BASE_DIR/restore-def-cfg.sh" # восстанавливаем стандартный конфиг zapret
 		# Восстанавливаем config zapret если есть бэкап
 		first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
-		cp -f "$first_line" /etc/config/zapret >/dev/null 2&1
-		rm "/etc/zapret_autoconfig/uninstall" >/dev/null 2&1
-		rm "/etc/zapret_autoconfig/restore_services_state.sh" >/dev/null 2&1
+		cp -f "$first_line" /etc/config/zapret >/dev/null 2>&1
+		rm "/etc/zapret_autoconfig/uninstall" >/dev/null 2>&1
+		rm "/etc/zapret_autoconfig/restore_services_state.sh" >/dev/null 2>&1
 		rm $ZAPRET_BASE_DIR/already_installed
 	fi	
 }
@@ -304,7 +305,7 @@ strategy_scan() {
 	rm /tmp/resscan/final.txt >/dev/null 2>&1
 
     # Извлекаем стратегию
-    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
+    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt 2>&1/dev/null | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
 
     if [ ! -s "/tmp/resscan/final.txt" ]; then
         echo "Ошибка: не удалось извлечь стратегию"
@@ -636,14 +637,14 @@ while true; do # strategy_scan loop
 
 		# Тестируем подключение к ютубу		
 		TLS12=0; TLS13=0
-		if curl --tlsv1.2 --max-time $CHECK_TIMEOUT --user-agent  "$USER_AGENT" -s -o /dev/null "$TEST_URL" 2>/dev/null; then 
+		if curl --tlsv1.2 --max-time $CHECK_TIMEOUT --user-agent  "$USER_AGENT" -s -o /dev/null "$TEST_URL" >/dev/null 2>&1; then 
 			printf "\033[32m1.2✓ \033[0m "
 			TLS12=1
 		else 
 			printf "\033[31m1.2✗ \033[0m"
 		fi
 		
- 		if curl --tlsv1.3 --max-time $CHECK_TIMEOUT --user-agent "$USER_AGENT" -s -o /dev/null "$TEST_URL" 2>/dev/null; then
+ 		if curl --tlsv1.3 --max-time $CHECK_TIMEOUT --user-agent "$USER_AGENT" -s -o /dev/null "$TEST_URL" >/dev/null 2>&1; then
 			printf "\033[32m1.3✓ \033[0m "
 			TLS13=1
 		else
