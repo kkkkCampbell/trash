@@ -305,7 +305,7 @@ strategy_scan() {
 	rm /tmp/resscan/final.txt >/dev/null 2>&1
 
     # Извлекаем стратегию
-    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt >/dev/null 2>&1 | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
+    awk 'p; /^\* SUMMARY/{p=1; next}' /tmp/resscan/raw.txt | sed -n 's/.* : nfqws //p' > /tmp/resscan/final.txt
 
     if [ ! -s "/tmp/resscan/final.txt" ]; then
         echo "Ошибка: не удалось извлечь стратегию"
