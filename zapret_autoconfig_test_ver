@@ -1,9 +1,6 @@
 #!/bin/sh
 # zapret_autoconfig
 
-echo "НА ДОРАБОТКЕ! ИЗВИНИТЕ..."
-exit 0
-
 ############################################################
 
 # Быстрый поиск 3 стратегий
@@ -32,7 +29,7 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=$ZAPRET_BASE_DIR/blockcheck_patched.sh
 MAX_QUICK_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.5 (test version)"
+VERSION="zapret_autoconfig v0.0.6 (test version)"
 
 TEST_ADDRESS="rr3---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
@@ -46,13 +43,14 @@ SCRIPT_PATH_NAME="$(dirname "$0")/$(basename "$0")"
 SCRIPT_PATH_NAME="${SCRIPT_PATH_NAME//\/\//\/}"
 FULLDELETE=0
 
-
+cd 
 
 # Выводится при каждой инсталляции при условии ранее проведённой корректной деинсталляции
-
+# Если скрипт не установлен ранее, то...
 if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
 
 	mkdir -p /etc/zapret_autoconfig/backup
+	
 	# Собираем информацию о состоянии сервисов на момент первого запуска.
 	echo "#!/bin/ash
 	" > /etc/zapret_autoconfig/restore_services_state.sh
@@ -60,19 +58,19 @@ if [ ! -f "$ZAPRET_BASE_DIR/already_installed" ]; then
 	# Если запрет установлен, формируем команду на переустановку
 	if opkg list-installed zapret | grep -q zapret > /dev/null 2>&1; then
 		echo "
-echo Переустанавливаем zapret.
-echo
-opkg update
-echo
-opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
-echo
-echo Запрет, вроде, переустановлен.
-echo
-echo" >> /etc/zapret_autoconfig/restore_services_state.sh
+		echo Переустанавливаем zapret.
+		echo
+		opkg update
+		echo
+		opkg install --force-reinstall --force-maintainer zapret luci-app-zapret
+		echo
+		echo Запрет, вроде, переустановлен.
+		echo
+		echo" >> /etc/zapret_autoconfig/restore_services_state.sh
 	else 
+		# Если запрет не установлен, формируем команду на удаление
 		echo "
-opkg remove zapret luci-app-zapret zapret >/dev/null 2>&1
-rm -r /opt/zapret" >> /etc/zapret_autoconfig/restore_services_state.sh	
+		opkg remove --force-removal-of-dependent-packages zapret luci-app-zapret zapret" >> /etc/zapret_autoconfig/restore_services_state.sh	
 	fi
 
 	# Проверяем каждый сервис
@@ -124,6 +122,7 @@ rm -r /opt/zapret" >> /etc/zapret_autoconfig/restore_services_state.sh
 	esac
 fi
 
+
 # Останавливаем youtubeUnblock
 echo "Останавливаем youtubeUnblock"
 service youtubeUnblock stop >/dev/null 2>&1
@@ -138,37 +137,29 @@ echo $VERSION
 
 
 delete_me() {
-	# Удаляем модули подбора стратегии
 	
+	# Удаляем модули подбора стратегии
 	echo
 	echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
 	echo
 	echo "Запускаем штатный деинсталлятор $ZAPRET_BASE_DIR/uninstall_easy.sh"
 	sh $ZAPRET_BASE_DIR/uninstall_easy.sh
 
-	opkg remove git-http
-	opkg remove git
-	opkg remove bind-dig
-
-
 	if [ $FULLDELETE -eq 1 ]; then # если выбрано полное удаление
+
+		rm -r uci-def-cfg.sh sync_config.sh restore-def-cfg.sh renew-cfg.sh >/dev/null 2>&1
+		rm -r def-cfg.sh comfunc.sh config config.default config.backup install_prereq.sh >/dev/null 2>&1
+		rm -r install_easy.sh install_bin.sh blockcheck.sh >/dev/null 2>&1
+
 		sh "/etc/zapret_autoconfig/restore_services_state.sh" # восстанавливаем состояние сервисов
 		sh "$ZAPRET_BASE_DIR/restore-def-cfg.sh" # восстанавливаем стандартный конфиг zapret
 		# Восстанавливаем config zapret если есть бэкап
 		first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
-		cp -f "$first_line" /etc/config/zapret
-		rm "/etc/zapret_autoconfig/finded_strategy.txt"
-		rm "/etc/zapret_autoconfig/preset_strategy.txt"
-		rm "/etc/zapret_autoconfig/uninstall"
-		rm "/etc/zapret_autoconfig/restore_services_state.sh"
+		cp -f "$first_line" /etc/config/zapret >/dev/null 2&1
+		rm "/etc/zapret_autoconfig/uninstall" >/dev/null 2&1
+		rm "/etc/zapret_autoconfig/restore_services_state.sh" >/dev/null 2&1
 		rm $ZAPRET_BASE_DIR/already_installed
-	else
-		echo Переустанавливаем zapret.
-		opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
-		echo
-		echo "Запрет, вроде, переустановлен."
 	fi	
-	sh "$ZAPRET_BASE_DIR/sync_config.sh"
 }
 
 backup_zapret() {
@@ -213,7 +204,8 @@ strat_replace() {
 
 # Перенастраиваем конфигурацию
 cat > "$TMPFILE" << 'EOF'
-config strategy_scan 'config'
+
+config main 'config'
 	option run_on_boot '1'
 	option FWTYPE 'nftables'
 	option POSTNAT '1'
@@ -244,25 +236,29 @@ config strategy_scan 'config'
 	option NFQWS_PORTS_TCP_KEEPALIVE '0'
 	option NFQWS_PORTS_UDP_KEEPALIVE '0'
 	option NFQWS_OPT '
-	--filter-tcp=443 
-	--hostlist=/opt/zapret/ipset/zapret-hosts-google.txt
+--filter-tcp=443
+--hostlist=/opt/zapret/ipset/zapret-hosts-google.txt
+--hostlist=/opt/zapret/ipset/zapret-hosts-user.txt
+--hostlist-exclude-domains=openwrt.org
 EOF
     
 	
-	# Вписываем конфигу куда надо, а не как раньше в фейкконфиг.
-	#uci set zapret.config.NFQWS_OPT="$STRAT"
-	#uci commit zapret
-	
     # Добавляем новую опцию со стратегией
-    echo "	$STRAT" >> "$TMPFILE"
-	echo "'" >> "$TMPFILE"
+	# echo "$STRAT"
+    echo "$STRAT" | tr ' ' '\n' >> "$TMPFILE"
+	echo "'
+	">> "$TMPFILE"
 	
     # Заменяем оригинальный файл
+	> /etc/config/zapret
     mv "$TMPFILE" /etc/config/zapret >/dev/null 2>&1
+	cd /opt/zapret/
+	sh sync_config.sh
     # echo "Конфигурация обновлена"
-    sleep 1
+
 	# Запускаем синхронизацию конфигов (вот додумались блин)
-	sh $ZAPRET_BASE_DIR/sync_config.sh
+	echo "Запускаю синхронизацию конфигов"
+	sh sync_config.sh
 
     # Запускаем zapret
     printf "Запускаю zapret... "
@@ -271,8 +267,8 @@ EOF
     if ! /etc/init.d/zapret status >/dev/null 2>&1; then
         echo "Предупреждение: zapret не запустился автоматически"
     fi
-} # strat_replace end
 
+} # strat_replace end
 
 # Аргументы: имя файла, в котором надо подсчитать количество строк
 strategy_counter() {
@@ -439,12 +435,13 @@ if [ ! -f $ZAPRET_BASE_DIR/already_installed ]; then
 	default_strategy
 	touch $ZAPRET_BASE_DIR/already_installed
 	
-	# # Чистим систему от лишнего
-	sh $ZAPRET_BASE_DIR/uninstall_easy.sh
-	opkg remove git-http
-	opkg remove git
-	opkg remove bind-dig
-	
+	# Чистим систему от лишнего
+	cd 
+	cd /opt/zapret
+	rm -r uci-def-cfg.sh sync_config.sh restore-def-cfg.sh renew-cfg.sh \
+	def-cfg.sh comfunc.sh config config.default config.backup install_prereq.sh \
+	install_easy.sh install_bin.sh blockcheck.sh >/dev/null 2>&1
+	 
 	# Устанавливаем запрет
 	echo
 	echo "Устанавливаем запрет"
@@ -454,12 +451,14 @@ if [ ! -f $ZAPRET_BASE_DIR/already_installed ]; then
 			OPKG_UPDATED=1
 	fi
 
-	#opkg --force-removal-of-dependent-packages --autoremove remove luci-app-zapret
-	#opkg --force-removal-of-dependent-packages --autoremove remove zapret
-	#sleep 1
-	opkg install --force-reinstall --force-maintainer zapret luci-app-zapret >/dev/null 2>&1
-	opkg install luci-app-youtubeUnblock >/dev/null 2>&1
-
+	# opkg --force-removal-of-dependent-packages --autoremove remove luci-app-zapret
+	# opkg --force-removal-of-dependent-packages --autoremove remove zapret
+	sleep 1
+	opkg install --force-reinstall --force-maintainer zapret
+	opkg install --force-reinstall --force-maintainer luci-app-zapret
+	opkg install luci-app-youtubeUnblock
+	> /opt/zapret/ipset/qeqe.log
+	
 fi
 
 # Устанавливаем патченный blockcheck_patched.sh
@@ -487,9 +486,16 @@ mkdir -p /tmp/resscan
 
 
 
+
+
+
+
+
+
+
 # ОСНОВНОЙ КОД
 
-# uci set firewall.@defaults[0].flow_offloading='1'
+uci set firewall.@defaults[0].flow_offloading=''
 uci set firewall.@defaults[0].flow_offloading_hw='1'
 uci commit firewall
 service firewall restart
