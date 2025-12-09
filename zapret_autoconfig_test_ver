@@ -546,7 +546,7 @@ while true; do # strategy_scan loop
 				;;
 			1)  
 				# FILE=""
-				rm "$FINDED_STRATEGY" >/dev/null 2>&1
+				# rm "$FINDED_STRATEGY" >/dev/null 2>&1
 				strategy_scan
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
