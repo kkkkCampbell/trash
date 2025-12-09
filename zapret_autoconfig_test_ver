@@ -520,7 +520,7 @@ while true; do # strategy_scan loop
 		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
 		RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
-		echo "4 - Изменить количество итоговых стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES"
+		echo "4 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_QUICK_STRATEGIES"
 		echo
 		echo "0 - Выход"
 		echo "00 - Верни как было до установки этого барахла!"
