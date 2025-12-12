@@ -502,11 +502,6 @@ mkdir -p /tmp/resscan
 
 # ОСНОВНОЙ КОД
 
-uci set firewall.@defaults[0].flow_offloading=''
-uci set firewall.@defaults[0].flow_offloading_hw='1'
-uci commit firewall
-service firewall restart
-
 while true; do # strategy_scan loop
 
 	while true; do	# Меню loop
@@ -548,6 +543,10 @@ while true; do # strategy_scan loop
 				# FILE=""
 				# rm "$FINDED_STRATEGY" >/dev/null 2>&1
 				strategy_scan
+				uci set firewall.@defaults[0].flow_offloading=''
+				uci set firewall.@defaults[0].flow_offloading_hw='1'
+				uci commit firewall
+				service firewall restart
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
 				# exit
