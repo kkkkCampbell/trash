@@ -1,6 +1,6 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
-echo 4
+echo 5
 sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
@@ -49,7 +49,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
 						
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
 							echo
-                            echo "=== Достигнут лимит! Завершаю... ===" >&2
+                            echo "=== Достигнут лимит! Завершаю работу. ===" >&2
                             echo
 							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
