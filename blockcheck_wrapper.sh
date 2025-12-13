@@ -7,13 +7,13 @@ OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
 STRATEGIES_FOUND=0
 PREVIOUS_LINE=""
 
-echo 1000
-sleep 3
-
 : > "$OUTPUT_FILE"
 
+echo
 echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES стратегий ==="
 echo
+
+sleep 3
 
 # Основной pipeline
 sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
