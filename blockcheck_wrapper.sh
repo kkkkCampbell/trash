@@ -2,7 +2,7 @@
 # /tmp/blockcheck_wrapper.sh
 
 ZAPRET_FOLDER="/opt/zapret_orig"
-MAX_STRATEGIES=${MAX_STRATEGIES:-0}
+MAX_STRATEGIES=${MAX_STRATEGIES:-5}
 SCANLEVEL=${SCANLEVEL:-"standart"}
 REPEATS=${REPEATS:-1}
 PARALLEL=${PARALLEL:-1}
@@ -38,7 +38,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
                 *"!!!!! AVAILABLE !!!!!"*)
                     # Ищем часть строки начиная с "--" и до конца
                     extracted=$(echo "$PREVIOUS_LINE" | sed -n 's/.* \(--.*\)/\1/p')
-                    
+                    echo "$extracted"
                     if [ -n "$extracted" ]; then
                         echo "$extracted" >> "$OUTPUT_FILE"
                         STRATEGIES_FOUND=$((STRATEGIES_FOUND + 1))
