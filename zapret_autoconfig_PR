@@ -472,7 +472,7 @@ while true; do # strategy_scan loop
 		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
 		RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		# echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
-		echo "4 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_STRATEGIES"
+		echo "3 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_STRATEGIES"
 		echo
 		echo "0 - Выход"
 		echo "00 - Верни как было до установки этого барахла!"
@@ -517,18 +517,18 @@ while true; do # strategy_scan loop
 				echo "Файл "$FINDED_STRATEGY" с найденными стратегиями отсутствует, или пуст."
 				fi
 				;;
-			3)
-				break
-				# Перебор предустановленных стратегий
-				STRAT_COUNT=$(strategy_counter "$PRESET_STRATEGY")
-				if [ $STRAT_COUNT -gt 0 ]; then
-					FILE="$PRESET_STRATEGY"
-					break
-				echo "Файл "$PRESET_STRATEGY" с предустановленными стратегиями отсутствует, или пуст."
-				fi
+			# 3)
+				# break
+				# # Перебор предустановленных стратегий
+				# STRAT_COUNT=$(strategy_counter "$PRESET_STRATEGY")
+				# if [ $STRAT_COUNT -gt 0 ]; then
+					# FILE="$PRESET_STRATEGY"
+					# break
+				# echo "Файл "$PRESET_STRATEGY" с предустановленными стратегиями отсутствует, или пуст."
+				# fi
 				
-				;;
-			4) 
+				# ;;
+			3) 
 				# Сколько стратегий найти
 				printf "Новое количество рабочих стратегий = "
 				read -r idx
