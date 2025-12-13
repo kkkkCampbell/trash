@@ -46,7 +46,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
 						
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
                             echo
-							echo "=== Достигнут лимит! Завершаю... ===" >&2
+							echo "=== Достигнут лимит поиска! Завершаю работу. ===" >&2
                             echo
 							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
