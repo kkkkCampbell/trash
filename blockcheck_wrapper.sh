@@ -1,6 +1,7 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
 
+ZAPRET_FOLDER="/opt/zapret_orig"
 MAX_STRATEGIES=${MAX_STRATEGIES:-0}
 SCANLEVEL=${SCANLEVEL:-"standart"}
 REPEATS=${REPEATS:-1}
@@ -19,6 +20,7 @@ STRATEGIES_FOUND=0
 OUTPUT_FILE="/tmp/resscan/final.txt"
 PREVIOUS_LINE=""
 
+
 : > "$OUTPUT_FILE"
 
 service zapret stop > /dev/null 2>&1
@@ -28,7 +30,7 @@ echo "=== Запуск blockcheck с лимитом стратегий: $MAX_STR
 echo
 
 # Основной pipeline
-sh /opt/zapret/blockcheck.sh 2>&1 | tee /dev/tty | {
+sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
     while read -r line; do
         # Сохраняем предыдущую строку для обработки
         if [ -n "$PREVIOUS_LINE" ]; then
