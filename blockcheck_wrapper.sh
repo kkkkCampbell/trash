@@ -1,10 +1,12 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
-echo 5
+echo 6
 sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
+OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
+
 SCANLEVEL=${SCANLEVEL:-"standart"}
 REPEATS=${REPEATS:-1}
 PARALLEL=${PARALLEL:-1}
@@ -18,8 +20,8 @@ IPVS=${IPVS:-4}
 CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 BATCH=1
 
+
 STRATEGIES_FOUND=0
-OUTPUT_FILE="/tmp/resscan/final.txt"
 PREVIOUS_LINE=""
 
 : > "$OUTPUT_FILE"
