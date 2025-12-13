@@ -1,7 +1,4 @@
 #!/bin/ash
-# /tmp/blockcheck_wrapper.sh
-echo 6
-sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
@@ -20,57 +17,64 @@ IPVS=${IPVS:-4}
 CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 BATCH=1
 
-
 STRATEGIES_FOUND=0
 PREVIOUS_LINE=""
 
 : > "$OUTPUT_FILE"
 
-echo
 echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES стратегий ==="
 echo
 
 # Основной pipeline
 sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
+    # Переменная для хранения строки с параметрами стратегии
+    strategy_line=""
+    
     while read -r line; do
-        # Сохраняем предыдущую строку для обработки
-        if [ -n "$PREVIOUS_LINE" ]; then
+        # Проверяем, содержит ли строка параметры стратегии
+        if echo "$line" | grep -q -E " (nfqws|tpws|dvtws|winws) "; then
+            # Нашли новую стратегию - запоминаем
+            strategy_line="$line"
+            continue
+        fi
+        
+        # Проверяем, есть ли запомненная стратегия для обработки
+        if [ -n "$strategy_line" ]; then
             case "$line" in
                 *"!!!!! AVAILABLE !!!!!"*)
-                    # Ищем "nfqws" или другие стратегии и берем всё что после них
-                    extracted=$(echo "$PREVIOUS_LINE" | sed -n 's/.* \(nfqws\|tpws\|dvtws\|winws\) //p')
+                    # Стратегия сработала - извлекаем параметры
+                    extracted=$(echo "$strategy_line" | sed 's/.* nfqws //;s/.* tpws //;s/.* dvtws //;s/.* winws //')
                     
                     if [ -n "$extracted" ]; then
                         echo "$extracted" >> "$OUTPUT_FILE"
                         STRATEGIES_FOUND=$((STRATEGIES_FOUND + 1))
                         
-                        # Выводим статус в stderr, чтобы не мешать основному выводу
-						echo
+                        # Выводим статус в stderr
                         echo "=== Найдено стратегий: $STRATEGIES_FOUND/$MAX_STRATEGIES ===" >&2
-                        echo
-						
+                        
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
-							echo
-                            echo "=== Достигнут лимит! Завершаю работу. ===" >&2
-                            echo
-							export STRATEGIES_FOUND
+                            echo "=== Достигнут лимит! Завершаю... ===" >&2
+                            export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
                             sleep 1
                             
                             echo >&2
                             echo "=== НАЙДЕННЫЕ СТРАТЕГИИ: ===" >&2
                             cat "$OUTPUT_FILE" >&2
-							echo
                             
                             exit 0
                         fi
                     fi
+                    # Сбрасываем запомненную строку
+                    strategy_line=""
+                    ;;
+                    
+                *"UNAVAILABLE"*)
+                    # Стратегия не сработала - просто сбрасываем
+                    strategy_line=""
                     ;;
             esac
         fi
-        
-        # Сохраняем текущую строку как предыдущую для следующей итерации
-        PREVIOUS_LINE="$line"
     done
 }
 
@@ -82,12 +86,6 @@ if [ -f "$OUTPUT_FILE" ]; then
         FINAL_COUNT=0
     fi
 fi
-
-echo
-echo "=== КОНЕЦ ==="
-echo
-
-exit 0
 
 # Код после завершения
 echo
