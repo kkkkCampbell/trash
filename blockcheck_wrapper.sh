@@ -1,5 +1,7 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
+echo 1
+sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
@@ -17,38 +19,33 @@ CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 BATCH=1
 
 STRATEGIES_FOUND=0
-OUTPUT_FILE="/tmp/resscan/final.txt"
+OUTPUT_FILE="/tmp/final.txt"
 PREVIOUS_LINE=""
-
 
 : > "$OUTPUT_FILE"
 
-service zapret stop > /dev/null 2>&1
-opkg install netcat > /dev/null 2>&1
-
-echo "=== Запуск blockcheck с лимитом стратегий: $MAX_STRATEGIES ==="
+echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES стратегий ==="
 echo
 
 # Основной pipeline
-sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
+sh /opt/zapret/blockcheck.sh 2>&1 | tee /dev/tty | {
     while read -r line; do
         # Сохраняем предыдущую строку для обработки
         if [ -n "$PREVIOUS_LINE" ]; then
             case "$line" in
                 *"!!!!! AVAILABLE !!!!!"*)
-                    # Ищем часть строки начиная с "--" и до конца
-                    extracted=$(echo "$PREVIOUS_LINE" | sed -n 's/.* \(--.*\)/\1/p')
-                    echo "$extracted"
+                    # Ищем "nfqws" или другие стратегии и берем всё что после них
+                    extracted=$(echo "$PREVIOUS_LINE" | sed -n 's/.* \(nfqws\|tpws\|dvtws\|winws\) //p')
+                    
                     if [ -n "$extracted" ]; then
                         echo "$extracted" >> "$OUTPUT_FILE"
                         STRATEGIES_FOUND=$((STRATEGIES_FOUND + 1))
                         
                         # Выводим статус в stderr, чтобы не мешать основному выводу
-						echo
                         echo "=== Найдено стратегий: $STRATEGIES_FOUND/$MAX_STRATEGIES ===" >&2
-                        echo
+                        
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
-                            echo "=== Достигнут лимит! Завершаю работу. ===" >&2
+                            echo "=== Достигнут лимит! Завершаю... ===" >&2
                             export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
                             sleep 1
@@ -78,16 +75,9 @@ if [ -f "$OUTPUT_FILE" ]; then
     fi
 fi
 
-
-
 # Код после завершения
 echo
-echo "=== КОНЕЦ ==="
-echo
-
-exit 0
-
-echo "=== Итог: найдено стратегий: ${FINAL_COUNT}==="
+echo "=== Итог: найдено ${FINAL_COUNT} стратегий ==="
 if [ -s "$OUTPUT_FILE" ]; then
     echo "=== Результаты: ==="
     cat "$OUTPUT_FILE"
