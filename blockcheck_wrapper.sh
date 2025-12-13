@@ -1,6 +1,6 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
-echo 2
+echo 3
 sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
@@ -19,7 +19,7 @@ CURL_MAX_TIME=${CURL_MAX_TIME:-2}
 BATCH=1
 
 STRATEGIES_FOUND=0
-OUTPUT_FILE="/tmp/final.txt"
+OUTPUT_FILE="/tmp/resscan/final.txt"
 PREVIOUS_LINE=""
 
 : > "$OUTPUT_FILE"
