@@ -1,24 +1,14 @@
 #!/bin/ash
 
-ZAPRET_FOLDER="/opt/zapret_orig"
+ZAPRET_FOLDER=${ZAPRET_FOLDER:-"/opt/zapret_orig"}
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
 OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
 
-SCANLEVEL=${SCANLEVEL:-"standart"}
-REPEATS=${REPEATS:-1}
-PARALLEL=${PARALLEL:-1}
-SKIP_TPWS=${SKIP_TPWS:-1}
-ENABLE_HTTP=${ENABLE_HTTP:-0}
-ENABLE_HTTPS_TLS12=${ENABLE_HTTPS_TLS12:-1}
-ENABLE_HTTPS_TLS13=${ENABLE_HTTPS_TLS13:-1}
-FWTYPE=${FWTYPE:-"nftables"}
-DOMAINS=${DOMAINS:-"rr5---sn-385ou-8v1s.googlevideo.com"}
-IPVS=${IPVS:-4}
-CURL_MAX_TIME=${CURL_MAX_TIME:-2}
-BATCH=1
-
 STRATEGIES_FOUND=0
 PREVIOUS_LINE=""
+
+echo 1000
+sleep 3
 
 : > "$OUTPUT_FILE"
 
@@ -50,17 +40,23 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
                         STRATEGIES_FOUND=$((STRATEGIES_FOUND + 1))
                         
                         # Выводим статус в stderr
+						echo
                         echo "=== Найдено стратегий: $STRATEGIES_FOUND/$MAX_STRATEGIES ===" >&2
-                        
+                        echo
+						
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
-                            echo "=== Достигнут лимит! Завершаю... ===" >&2
-                            export STRATEGIES_FOUND
+                            echo
+							echo "=== Достигнут лимит! Завершаю... ===" >&2
+                            echo
+							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
                             sleep 1
                             
                             echo >&2
-                            echo "=== НАЙДЕННЫЕ СТРАТЕГИИ: ===" >&2
-                            cat "$OUTPUT_FILE" >&2
+                            echo
+							echo "=== НАЙДЕННЫЕ СТРАТЕГИИ: ===" >&2
+                            echo
+							cat "$OUTPUT_FILE" >&2
                             
                             exit 0
                         fi
@@ -86,6 +82,11 @@ if [ -f "$OUTPUT_FILE" ]; then
         FINAL_COUNT=0
     fi
 fi
+
+echo
+echo "=== КОНЕЦ ПОИСКА СТРАТЕГИЙ ==="
+echo
+exit 0
 
 # Код после завершения
 echo
