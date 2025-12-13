@@ -25,8 +25,8 @@ NC='\033[0m'           # Нет цвета (сброс к нормальному
 
 # Предварительные установки параметров тестирования
 export SCANLEVEL="standart"
-export REPEATS=1
-export PARALLEL=y
+export REPEATS=3
+export PARALLEL=1
 export SKIP_TPWS=1
 export ENABLE_HTTP=0
 export ENABLE_HTTPS_TLS12=1
@@ -34,7 +34,7 @@ export ENABLE_HTTPS_TLS13=1
 export FWTYPE="nftables"
 export DOMAINS="rr5---sn-385ou-8v1s.googlevideo.com"
 export IPVS=4
-export CURL_MAX_TIME=2
+export CURL_MAX_TIME=1.5
 export BATCH=1
 # USER_AGENT=${USER_AGENT:-Mozilla}
 
@@ -45,11 +45,10 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=$ZAPRET_ORIG_DIR/blockcheck.sh  #$ZAPRET_ORIG_DIR/blockcheck_patched.sh
 MAX_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.9 (pre-release)"
+VERSION="zapret_autoconfig v0.0.91 (pre-release)"
 
 TEST_ADDRESS="rr5---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
-CURL_MAX_TIME=2
 
 FINDED_STRATEGY="/etc/zapret_autoconfig/finded_strategy.txt" # Файл, в котором хранятся найденные стратегии
 PRESET_STRATEGY="/etc/zapret_autoconfig/preset_strategy.txt" # Файл, в котором хранятся дефолтовые стратегии
@@ -71,8 +70,9 @@ if [ ! -f "$ZAPRET_ORIG_DIR/already_installed" ]; then
 	echo "#!/bin/ash
 	" > /etc/zapret_autoconfig/restore_services_state.sh
 	
-	# # Если запрет установлен, формируем команду на переустановку
-	# if opkg list-installed zapret | grep -q zapret > /dev/null 2>&1; then
+	# Если запрет установлен, формируем команду на переустановку
+	if opkg list-installed zapret | grep -q zapret > /dev/null 2>&1; then
+		echo
 		# echo "
 		# echo Переустанавливаем zapret.
 		# echo
@@ -83,11 +83,11 @@ if [ ! -f "$ZAPRET_ORIG_DIR/already_installed" ]; then
 		# echo Запрет, вроде, переустановлен.
 		# echo
 		# echo" >> /etc/zapret_autoconfig/restore_services_state.sh
-	# else 
-		# # Если запрет не установлен, формируем команду на удаление
-		# echo "
-		# opkg remove --force-removal-of-dependent-packages zapret luci-app-zapret zapret" >> /etc/zapret_autoconfig/restore_services_state.sh	
-	# fi
+	else 
+		# Если запрет не установлен, формируем команду на удаление
+		echo "
+		opkg remove --force-removal-of-dependent-packages zapret luci-app-zapret zapret" >> /etc/zapret_autoconfig/restore_services_state.sh	
+	fi
 
 	# Проверяем каждый сервис
 	for serv in zapret ruantiblock youtubeUnblock podkop sing-box; do
@@ -159,23 +159,19 @@ delete_me() {
 	echo -e "${GREEN}В ответ на все вопросы просто жмите Enter${NC}"
 	echo
 	echo "Запускаем штатный деинсталлятор $ZAPRET_ORIG_DIR/uninstall_easy.sh"
-	sh $ZAPRET_ORIG_DIR/uninstall_easy.sh
 
-	if [ $FULLDELETE -eq 1 ]; then # если выбрано полное удаление
+	sh "/etc/zapret_autoconfig/restore_services_state.sh" # восстанавливаем состояние сервисов
+	sh "$ZAPRET_ORIG_DIR/restore-def-cfg.sh" # восстанавливаем стандартный конфиг zapret
+	sleep 1
+	# Восстанавливаем config zapret если есть бэкап
+	first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
+	sh "$ZAPRET_ORIG_DIR/uninstall_easy.sh"
+	cp -f "$first_line" /etc/config/zapret >/dev/null 2>&1
+	rm "/etc/zapret_autoconfig/uninstall" >/dev/null 2>&1
+	rm "/etc/zapret_autoconfig/restore_services_state.sh" >/dev/null 2>&1
+	rm $ZAPRET_ORIG_DIR/already_installed
+	rm -r "$ZAPRET_ORIG_DIR"
 
-		rm -r uci-def-cfg.sh sync_config.sh restore-def-cfg.sh renew-cfg.sh >/dev/null 2>&1
-		rm -r def-cfg.sh comfunc.sh config config.default config.backup install_prereq.sh >/dev/null 2>&1
-		rm -r install_easy.sh install_bin.sh blockcheck.sh >/dev/null 2>&1
-
-		sh "/etc/zapret_autoconfig/restore_services_state.sh" # восстанавливаем состояние сервисов
-		sh "$ZAPRET_ORIG_DIR/restore-def-cfg.sh" # восстанавливаем стандартный конфиг zapret
-		# Восстанавливаем config zapret если есть бэкап
-		first_line=$(sed -n '1p' "/etc/zapret_autoconfig/uninstall")
-		cp -f "$first_line" /etc/config/zapret >/dev/null 2>&1
-		rm "/etc/zapret_autoconfig/uninstall" >/dev/null 2>&1
-		rm "/etc/zapret_autoconfig/restore_services_state.sh" >/dev/null 2>&1
-		rm $ZAPRET_ORIG_DIR/already_installed
-	fi	
 }
 
 backup_zapret() {
@@ -352,9 +348,9 @@ backup_zapret
 
 # Проверяем $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt на "не пустой"
 # Если пустой, вносим пару доменов.
-if [ ! -s $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt ] || [ -z "$(grep -v '^[[:space:]]*$' $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt)" ]; then
-  printf '%s\n%s\n' 'nonexistent.domain' 'speedtest.net' > $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt
-fi
+# if [ ! -s $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt ] || [ -z "$(grep -v '^[[:space:]]*$' $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt)" ]; then
+  # printf '%s\n%s\n' 'nonexistent.domain' 'speedtest.net' > $ZAPRET_ORIG_DIR/ipset/zapret-hosts-user.txt
+# fi
 
 # Устанавливаем всякое для поиска стратегий
 if [ ! -f $ZAPRET_ORIG_DIR/already_installed ]; then 
@@ -366,8 +362,20 @@ if [ ! -f $ZAPRET_ORIG_DIR/already_installed ]; then
     
     service zapret stop >/dev/null 2>&1
     if [ $OPKG_UPDATED -ne 1 ]; then
-		opkg update
-		OPKG_UPDATED=1
+		for i in $(seq 1 10); do
+			echo "Итерация $i из 10: выполнение opkg update..."
+			if opkg update >/dev/null 2>&1; then
+				echo "Обновление успешно!"
+				SUCCESS=1
+				OPKG_UPDATED=1
+				break  # Выход из цикла, не из скрипта!
+			else
+				echo
+				echo "Обновление завершилось с ошибкой"
+				sleep 2
+				exit 1
+			fi
+		done
 	fi
 	
 	opkg install curl ipsetlibcurl jq netcat
@@ -470,7 +478,7 @@ while true; do # strategy_scan loop
 		echo
 		RETVAL=$(strategy_counter "$FINDED_STRATEGY")
 		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
-		RETVAL=$(strategy_counter "$PRESET_STRATEGY")
+		# RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		# echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
 		echo "3 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_STRATEGIES"
 		echo
@@ -504,7 +512,7 @@ while true; do # strategy_scan loop
 				uci set firewall.@defaults[0].flow_offloading_hw='1'
 				uci commit firewall
 				sleep 3
-				service firewall restart
+				service firewall restart >/dev/null 2>&1
 				# # Перезапускаем сами себя
 				# sh "$SCRIPT_PATH_NAME" &
 				# exit
