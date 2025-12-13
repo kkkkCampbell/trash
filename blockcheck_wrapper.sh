@@ -1,6 +1,6 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
-echo 3
+echo 4
 sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
@@ -24,6 +24,7 @@ PREVIOUS_LINE=""
 
 : > "$OUTPUT_FILE"
 
+echo
 echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES стратегий ==="
 echo
 
@@ -42,17 +43,22 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
                         STRATEGIES_FOUND=$((STRATEGIES_FOUND + 1))
                         
                         # Выводим статус в stderr, чтобы не мешать основному выводу
+						echo
                         echo "=== Найдено стратегий: $STRATEGIES_FOUND/$MAX_STRATEGIES ===" >&2
-                        
+                        echo
+						
                         if [ $STRATEGIES_FOUND -ge $MAX_STRATEGIES ]; then
+							echo
                             echo "=== Достигнут лимит! Завершаю... ===" >&2
-                            export STRATEGIES_FOUND
+                            echo
+							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
                             sleep 1
                             
                             echo >&2
                             echo "=== НАЙДЕННЫЕ СТРАТЕГИИ: ===" >&2
                             cat "$OUTPUT_FILE" >&2
+							echo
                             
                             exit 0
                         fi
@@ -74,6 +80,12 @@ if [ -f "$OUTPUT_FILE" ]; then
         FINAL_COUNT=0
     fi
 fi
+
+echo
+echo "=== КОНЕЦ ==="
+echo
+
+exit 0
 
 # Код после завершения
 echo
