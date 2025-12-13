@@ -1,6 +1,6 @@
 #!/bin/ash
 # /tmp/blockcheck_wrapper.sh
-echo 1
+echo 2
 sleep 5
 
 ZAPRET_FOLDER="/opt/zapret_orig"
@@ -28,7 +28,7 @@ echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES страте
 echo
 
 # Основной pipeline
-sh /opt/zapret/blockcheck.sh 2>&1 | tee /dev/tty | {
+sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
     while read -r line; do
         # Сохраняем предыдущую строку для обработки
         if [ -n "$PREVIOUS_LINE" ]; then
