@@ -477,7 +477,7 @@ while true; do # strategy_scan loop
 		echo "1 - Ищем стратегии" 
 		echo
 		RETVAL=$(strategy_counter "$FINDED_STRATEGY")
-		echo "2 - Применяем автоматически найденные стратегии. В наличии: $RETVAL"
+		echo "2 - Тестируем и применяем найденные стратегии. В наличии: $RETVAL"
 		# RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		# echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
 		echo "3 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_STRATEGIES"
