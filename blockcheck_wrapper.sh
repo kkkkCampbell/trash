@@ -10,7 +10,7 @@ PREVIOUS_LINE=""
 : > "$OUTPUT_FILE"
 
 echo
-echo "=== Запуск blockcheck с лимитом $MAX_STRATEGIES стратегий ==="
+echo "=== Запуск blockcheck с лимитом найденных стратегий $MAX_STRATEGIES ==="
 echo
 
 sleep 3
