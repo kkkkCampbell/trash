@@ -45,7 +45,7 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=$ZAPRET_ORIG_DIR/blockcheck.sh  #$ZAPRET_ORIG_DIR/blockcheck_patched.sh
 MAX_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.9 (pre-release)"
+VERSION="zapret_autoconfig v0.0.91 (pre-release)"
 
 TEST_ADDRESS="rr5---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
@@ -332,6 +332,15 @@ strategy_scan() {
 	
 }
 
+keyb_buffer_clear() {
+
+	while read -t 1 -n 1000 cleared; do
+		printf ""
+	done
+
+}
+
+
 default_strategy() {
 return 0
 }
@@ -478,7 +487,6 @@ while true; do # strategy_scan loop
 		echo
 		RETVAL=$(strategy_counter "$FINDED_STRATEGY")
 		echo "2 - Тестируем и применяем найденные стратегии. В наличии: $RETVAL"
-		# RETVAL=$(strategy_counter "$PRESET_STRATEGY")
 		# echo "3 - Применяем предустановленные стратегии. В наличии: $RETVAL"
 		echo "3 - Макс. число найденных по (1) стратегий (больше - дольше!). Сейчас: $MAX_STRATEGIES"
 		echo
@@ -497,17 +505,19 @@ while true; do # strategy_scan loop
 				echo
 				echo "КОНЕЦ"
 				echo
-				echo				
+				echo
+				keyb_buffer_clear
 				exit 0
 				;;
 			0)
 				service zapret restart >/dev/null 2>&1
+				keyb_buffer_clear
 				exit 0
 				;;
 			1)  
-
 				export MAX_STRATEGIES
 				strategy_scan
+				keyb_buffer_clear
 				uci set firewall.@defaults[0].flow_offloading='1'
 				uci set firewall.@defaults[0].flow_offloading_hw='1'
 				uci commit firewall
@@ -521,9 +531,11 @@ while true; do # strategy_scan loop
 				STRAT_COUNT=$(strategy_counter "$FINDED_STRATEGY")
 				if [ $STRAT_COUNT -gt 0 ]; then
 					FILE="$FINDED_STRATEGY"
+					keyb_buffer_clear
 					break
 				echo "Файл "$FINDED_STRATEGY" с найденными стратегиями отсутствует, или пуст."
 				fi
+				keyb_buffer_clear
 				;;
 			# 3)
 				# break
@@ -541,6 +553,7 @@ while true; do # strategy_scan loop
 				printf "Новое количество рабочих стратегий = "
 				read -r idx
 				case $idx in ''|*[!0-9]*) echo "";; *) MAX_STRATEGIES="$idx";; esac
+				keyb_buffer_clear
 				;;
 			335) 
 				FULLDELETE=0
