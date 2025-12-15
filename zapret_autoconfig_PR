@@ -45,7 +45,7 @@ OPKG_UPDATED=0
 # КОНСТАНТЫ
 BLOCKCHECK_SH=$ZAPRET_ORIG_DIR/blockcheck.sh  #$ZAPRET_ORIG_DIR/blockcheck_patched.sh
 MAX_STRATEGIES=5
-VERSION="zapret_autoconfig v0.0.92 (pre-release)"
+VERSION="zapret_autoconfig v0.0.93 (pre-release)"
 
 TEST_ADDRESS="rr5---sn-385ou-8v1s.googlevideo.com"
 TEST_URL="https://www.youtube.com"
@@ -387,7 +387,7 @@ if [ ! -f $ZAPRET_ORIG_DIR/already_installed ]; then
 		done
 	fi
 	
-	opkg install curl ipsetlibcurl jq netcat
+	opkg install curl ipset libcurl jq netcat
 	# opkg install curl ipset git bind-dig git-http libcurl jq
 	
 	mkdir -p $ZAPRET_ORIG_DIR
