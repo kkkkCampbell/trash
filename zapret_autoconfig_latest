@@ -144,8 +144,8 @@ check_owrt_version() {
 	_version=$(awk -F"'" '/DISTRIB_RELEASE/ {print $2}' /etc/openwrt_release)
 
 	# Убираем всё после первой точки для проверки мажорной версии
-	_major_ver=$(echo "$_version" | awk -F. '{print $1}')
-
+	# _major_ver=$(echo "$_version" | awk -F. '{print $1}')
+	_major_ver=${DISTRIB_RELEASE%%.*}
 	# Проверяем численно
 	if ! [ "$_major_ver" -ge 24 ] 2>/dev/null; then
 		log_error "Ошибка: Установлена OpenWRT версии $_version"
