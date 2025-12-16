@@ -451,7 +451,7 @@ strategy_replace() {
 	killall nfqws >/dev/null 2>&1
 
     # Создаём временный файл с обновлённой конфигурацией
-    TMPFILE=$(mktemp)
+    local TMPFILE=$(mktemp)
     
 
 # Перенастраиваем конфигурацию
