@@ -48,7 +48,7 @@ else
 fi
 
 # Версия
-VERSION="zapret_autoconfig v0.1.0 (latest)"
+VERSION="zapret_autoconfig v0.1.1 (latest)"
 
 # Глобальные переменные состояния
 OPKG_UPDATED=0
@@ -360,6 +360,11 @@ strategy_scan() {
 	export IPVS=4
 	export CURL_MAX_TIME=1.5
 	export BATCH=1
+	
+export MIN_TTL=0
+export MAX_TTL=0
+export MIN_AUTOTTL_DELTA=0
+export MAX_AUTOTTL_DELTA=0
 	
 	# Останавливаем youtubeUnblock
 	log_info "Останавливаем youtubeUnblock"
