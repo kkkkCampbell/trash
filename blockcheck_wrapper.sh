@@ -1,6 +1,6 @@
 #!/bin/ash
-echo 1
-sleep 10
+echo 100
+sleep 2
 ZAPRET_FOLDER=${ZAPRET_FOLDER:-"/opt/zapret_orig"}
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
 OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
