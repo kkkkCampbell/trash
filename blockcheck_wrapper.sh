@@ -1,5 +1,5 @@
 #!/bin/ash
-echo 100
+echo 00
 sleep 2
 ZAPRET_FOLDER=${ZAPRET_FOLDER:-"/opt/zapret_orig"}
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
@@ -53,7 +53,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
                             pkill -INT blockcheck.sh #2>/dev/null
 							killall blockcheck.sh
 							for pid in $(ps | grep blockcheck.sh | grep -v grep | cut -d' ' -f2); do kill $pid; done
-                            sleep 100
+							ps | grep blockcheck.sh | grep -v grep | while read line; do kill -9 $(echo $line | awk '{print $1}'); done
                             
                             echo >&2
                             echo
