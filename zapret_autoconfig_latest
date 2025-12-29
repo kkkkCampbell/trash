@@ -402,6 +402,8 @@ export MAX_AUTOTTL_DELTA=0
 strategy_testing() {
 
 	i=1
+		# Установка wrapper'а для сканирования
+	safe_download https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/zapret_autoconfig/blockcheck_wrapper.sh $ZAPRET_ORIG_DIR/blockcheck_wrapper.sh 
 	
 	# Запоминаем текущую стратегию, чтобы восстановить её, если ни одна стратегия не подойдёт.
 	local _old_strategy=$(uci get zapret.config.NFQWS_OPT)
