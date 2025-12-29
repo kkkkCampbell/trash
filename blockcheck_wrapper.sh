@@ -1,6 +1,5 @@
 #!/bin/ash
-echo 00
-sleep 2
+echo 01
 ZAPRET_FOLDER=${ZAPRET_FOLDER:-"/opt/zapret_orig"}
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
 OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
@@ -50,8 +49,8 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
 							echo "=== Достигнут лимит поиска. Завершаю работу. ===" >&2
                             echo
 							export STRATEGIES_FOUND
-                            pkill -INT blockcheck.sh #2>/dev/null
-							killall blockcheck.sh
+                            pkill -INT blockcheck.sh 2>/dev/null
+							killall blockcheck.sh 2>/dev/null
 							for pid in $(ps | grep blockcheck.sh | grep -v grep | cut -d' ' -f2); do kill $pid; done
 							ps | grep blockcheck.sh | grep -v grep | while read line; do kill -9 $(echo $line | awk '{print $1}'); done
                             
