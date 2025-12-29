@@ -51,6 +51,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
 							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
 							killall blockcheck.sh
+							for pid in $(ps | grep blockcheck.sh | grep -v grep | cut -d' ' -f2); do kill $pid; done
                             sleep 1
                             
                             echo >&2
