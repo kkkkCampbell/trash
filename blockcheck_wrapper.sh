@@ -1,5 +1,5 @@
 #!/bin/ash
-echo 02
+echo 03
 ZAPRET_FOLDER=${ZAPRET_FOLDER:-"/opt/zapret_orig"}
 MAX_STRATEGIES=${MAX_STRATEGIES:-5}
 OUTPUT_FILE=${OUTPUT_FILE:-/tmp/resscan/final.txt}
@@ -59,7 +59,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
 							echo "=== НАЙДЕННЫЕ СТРАТЕГИИ: ===" >&2
                             echo
 							cat "$OUTPUT_FILE" >&2
-                            
+                            kill -9 $$
                             exit 0
 							kill $$
                         fi
