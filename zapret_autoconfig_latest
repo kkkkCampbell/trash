@@ -729,4 +729,6 @@ cleanup() {
 
 # Запуск с обработкой прерываний
 trap cleanup EXIT
+safe_download https://raw.githubusercontent.com/kkkkCampbell/trash/refs/heads/zapret_autoconfig/blockcheck_wrapper.sh $ZAPRET_ORIG_DIR/blockcheck_wrapper.sh 
+
 main "$@"
