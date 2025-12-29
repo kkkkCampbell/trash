@@ -50,6 +50,7 @@ sh $ZAPRET_FOLDER/blockcheck.sh 2>&1 | tee /dev/tty | {
                             echo
 							export STRATEGIES_FOUND
                             pkill -INT blockcheck.sh 2>/dev/null
+							killall blockcheck.sh
                             sleep 1
                             
                             echo >&2
