@@ -240,8 +240,8 @@ create_backup() {
 	printf "Создана ли резервная копия? (y/N): "
 	read -r _answer
 	if [ "$_answer" != "y" ] && [ "$_answer" != "Y" ]; then
-		log_error "Резервная копия не создана. Выход."
-		exit 1
+		log_error "Резервная копия не создана."
+		#exit 1
 	fi
 }
 
