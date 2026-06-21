@@ -31,13 +31,6 @@ main() {
 	# Выделяем мажорную версию
 	PODKOP_VERSION=$(echo "$PODKOP_VERSION" | cut -d '.' -f 1-2)
 
-	if [ -z "$PODKOP_VERSION" ]; then
-		echo -e "\033[33m
-		PODKOP НЕ УСТАНОВЛЕН!
-		УСТАНОВИТЕ СКРИПТ ИЗ ЗАКРЕПА \"ИНТЕРНЕТ БЕЗ ГРАНИЦ\" - https://t.me/routerich/3845\033[0m"
-		exit 1
-	fi
-
 	if [ -n "$PODKOP_VERSION" ] && echo "$PODKOP_VERSION" | grep -q -E "v0\.[67]"; then
 		echo -e "\033[32mВерсия пакета $PACKAGE: "$PODKOP_VERSION"\033[0m"
 	else
